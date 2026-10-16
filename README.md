@@ -57,6 +57,39 @@ To develop Heynote you need Node.js and you should (hopefully) just need to chec
 > npm run dev
 ```
 
+### Dev container
+
+Open the repository in VS Code and run **Dev Containers: Reopen in Container**
+(requires Docker and the Dev Containers extension). Setup installs the locked npm
+dependencies and Chromium, Firefox, and WebKit for Playwright. The container uses
+Node.js 24 on Debian Bookworm and runs natively on Apple Silicon or Intel.
+
+Run `npm run dev` in the container, then open forwarded port **6080** in the Ports
+panel to see the Electron app. Connect with password `vscode`. The desktop is
+provided by the [desktop-lite feature](https://github.com/devcontainers/features/tree/main/src/desktop-lite).
+For a browser preview, run `npm run webapp:dev -- --host 0.0.0.0` and open
+forwarded port **5173**.
+
+Useful checks inside the container:
+
+```sh
+npm run test:main -- --run          # Main-process unit tests; exits when done
+npm test -- --workers=2            # Chromium, Firefox, and WebKit tests
+npx vite build                    # Build renderer, main process, and preloads
+xvfb-run -a npm run test:e2e -- --workers=1  # Electron integration tests
+```
+
+The workspace is mounted at `/workspace`. A Docker volume keeps Linux
+`node_modules` separate from host dependencies. Codex state lives in the ignored
+`.codex/` directory, matching the reference setup. On first launch,
+`.devcontainer/.env.example` is copied to the ignored `.devcontainer/.env` for
+optional environment variables; no API keys are required. `postCreateCommand`
+automatically installs dependencies from `package-lock.json` and the matching
+Playwright browsers whenever the container is created or rebuilt.
+
+This runs the Linux app. macOS-specific integration, signing, and packaging still
+need to be checked on macOS.
+
 ### Run Tests
 
 To run the tests:

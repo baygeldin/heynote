@@ -4,6 +4,7 @@ dist
 dist-electron
 release
 .env
+.codex/
 /test-results/
 /playwright-report/
 /blob-report/

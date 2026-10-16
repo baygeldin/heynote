@@ -1,0 +1,33 @@
+FROM node:24-bookworm-slim
+
+WORKDIR /workspace
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      bash \
+      build-essential \
+      ca-certificates \
+      curl \
+      git \
+      libasound2 \
+      libcairo2-dev \
+      libgbm1 \
+      libgif-dev \
+      libgtk-3-0 \
+      libjpeg-dev \
+      libnotify4 \
+      libnss3 \
+      libpango1.0-dev \
+      librsvg2-dev \
+      libxss1 \
+      libxtst6 \
+      pkg-config \
+      python3 \
+      ripgrep \
+      unzip \
+      vim \
+      xauth \
+      xvfb \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY .bashrc /root/.bashrc

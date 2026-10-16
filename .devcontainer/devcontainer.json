@@ -1,0 +1,50 @@
+{
+  "name": "heynote",
+  "build": {
+    "dockerfile": "Dockerfile.dev"
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "root",
+  "containerEnv": {
+    "CODEX_HOME": "/workspace/.codex"
+  },
+  "initializeCommand": "test -f .devcontainer/.env || cp .devcontainer/.env.example .devcontainer/.env",
+  "runArgs": [
+    "--env-file", "${localWorkspaceFolder}/.devcontainer/.env",
+    "--shm-size=1g"
+  ],
+  "mounts": [
+    "source=heynote-node-modules,target=/workspace/node_modules,type=volume"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/desktop-lite:1": {
+      "password": "vscode"
+    }
+  },
+  "forwardPorts": [3000, 5173, 6080],
+  "portsAttributes": {
+    "3000": {
+      "label": "Playwright test app",
+      "onAutoForward": "silent"
+    },
+    "5173": {
+      "label": "Vite dev server",
+      "onAutoForward": "silent"
+    },
+    "6080": {
+      "label": "Heynote desktop",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "waitFor": "postCreateCommand",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "openai.chatgpt",
+        "Vue.volar"
+      ]
+    }
+  }
+}
