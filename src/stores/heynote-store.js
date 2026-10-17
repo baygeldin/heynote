@@ -38,6 +38,7 @@ export const useHeynoteStore = defineStore("heynote", {
         },
 
         showBufferSelector: false,
+        colorPickerPath: null,
         showLanguageSelector: false,
         showCreateBuffer: false,
         showEditBuffer: false,
@@ -325,6 +326,7 @@ export const useHeynoteStore = defineStore("heynote", {
             this.drawImageId = null
         },
         closeDialog() {
+            this.colorPickerPath = null
             this.showCreateBuffer = false
             this.showBufferSelector = false
             this.showLanguageSelector = false

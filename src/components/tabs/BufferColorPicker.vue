@@ -10,7 +10,6 @@
         data() {
             return {
                 colors: BUFFER_COLORS,
-                isOpen: false,
                 position: {},
                 saving: false,
             }
@@ -18,6 +17,9 @@
 
         computed: {
             ...mapStores(useHeynoteStore, useErrorStore),
+            isOpen() {
+                return this.heynoteStore.colorPickerPath === this.path
+            },
             selectedColor() {
                 return this.colors.find(option => option.id === normalizeBufferColor(this.color))
             },
@@ -30,6 +32,7 @@
         },
 
         beforeUnmount() {
+            this.dismiss()
             document.removeEventListener('pointerdown', this.onOutsidePointerDown)
             window.removeEventListener('resize', this.dismiss)
             window.removeEventListener('scroll', this.onScroll, true)
@@ -37,6 +40,9 @@
 
         watch: {
             path() { this.dismiss() },
+            'heynoteStore.currentBufferPath'(path) {
+                if (path !== this.path) this.dismiss()
+            },
         },
 
         methods: {
@@ -45,18 +51,25 @@
                     this.dismiss()
                     return
                 }
+                this.heynoteStore.openBuffer(this.path, { focusEditor: false })
+                // Let activation and the tab's scrollIntoView finish before opening.
+                await this.$nextTick()
+                await new Promise(resolve => requestAnimationFrame(resolve))
+                if (this.heynoteStore.currentBufferPath !== this.path || !this.$refs.trigger) return
                 const rect = this.$refs.trigger.getBoundingClientRect()
                 this.position = {
                     left: `${Math.max(8, Math.min(rect.left, window.innerWidth - 240))}px`,
                     top: `${rect.bottom + 6}px`,
                 }
-                this.isOpen = true
+                this.heynoteStore.colorPickerPath = this.path
                 await this.$nextTick()
-                this.$refs.menu.querySelector('[aria-checked="true"]').focus()
+                if (this.isOpen) {
+                    this.$refs.menu?.querySelector('[aria-checked="true"]')?.focus()
+                }
             },
 
             dismiss() {
-                this.isOpen = false
+                if (this.isOpen) this.heynoteStore.colorPickerPath = null
             },
 
             closeAndFocusTrigger() {
