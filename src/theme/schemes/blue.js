@@ -18,6 +18,7 @@ export default {
             accentSelectedHover: "#396ea2",
             bufferTreeSelected: "#d3d9de",
             bodyBackground: "#ebf2fa",
+            blockEven: "#f5f9fd",
             blockOdd: "#ebf2fa",
             statusBackground: "#428bd1",
             highlight: "#428bd1",

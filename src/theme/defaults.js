@@ -13,7 +13,7 @@ export const THEME_DEFAULTS = {
             bodyText: "#444444",
             editorBackground: "#ffffff",
             editorText: "#444444",
-            blockEven: "#ffffff",
+            blockEven: "#f9f9f9",
             blockOdd: "#f2f2f2",
             blockBorder: "#dfdfdf",
             statusBackground: "#8c8c8c",

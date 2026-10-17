@@ -29,13 +29,13 @@ describe("color themes", () => {
     it("resolves fresh palettes without mutating defaults or other schemes", () => {
         const grey = getColorScheme("grey")
         const red = getColorScheme("red")
+        const original = resolveTheme(red, "light")
         const palette = resolveTheme(red, "light")
         palette.syntax.keyword = "#000000"
         palette.ui.blockEven = "#123456"
 
         expect(resolveTheme(grey, "light")).toEqual(THEME_DEFAULTS.light)
-        expect(resolveTheme(red, "light").syntax.keyword).toBe(THEME_DEFAULTS.light.syntax.keyword)
-        expect(resolveTheme(red, "light").ui.blockEven).toBe(THEME_DEFAULTS.light.ui.blockEven)
+        expect(resolveTheme(red, "light")).toEqual(original)
     })
 
     it("provides the same complete role set for every scheme and mode", () => {
