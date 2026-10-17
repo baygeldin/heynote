@@ -159,13 +159,13 @@ test.describe('electron app', { tag: "@e2e" }, () => {
     test('scratchpad colors persist in txt metadata across app restarts', async () => {
         await heynotePage.setContent('{"formatVersion":"2.0.0","name":"Scratch","custom":[42]}\n∞∞∞text\nKeep this content')
         await page.locator('.tab-item.active .buffer-color').click()
-        await page.getByRole('menuitemradio', {name: 'Violet', exact: true}).click()
+        await page.getByRole('menuitemradio', {name: 'Purple', exact: true}).click()
         await expect(page.getByRole('menu')).toHaveCount(0)
 
         const scratchPath = path.join(userDataDir, 'notes', 'scratch.txt')
         await expect.poll(async () => {
             return NoteFormat.load(await fs.readFile(scratchPath, 'utf8')).metadata.color
-        }).toBe('violet')
+        }).toBe('purple')
         const saved = NoteFormat.load(await fs.readFile(scratchPath, 'utf8'))
         expect(saved.metadata).toMatchObject({name: 'Scratch', custom: [42]})
         expect(saved.content).toBe('\n∞∞∞text\nKeep this content')
@@ -190,22 +190,22 @@ test.describe('electron app', { tag: "@e2e" }, () => {
 
         // Scratch has no cached editor yet. Its dot comes from the on-disk metadata.
         const scratchTab = page.locator('.tab-item').filter({hasText: 'Scratch'})
-        await expect(scratchTab.locator('.buffer-color')).toHaveAttribute('aria-label', 'Change color for Scratch (Violet)')
+        await expect(scratchTab.locator('.buffer-color')).toHaveAttribute('aria-label', 'Change color for Scratch (Purple)')
         await page.locator('.tab-item.active .buffer-color').click()
         await expect(page.getByRole('menu', {name: 'Color for Work', exact: true})).toBeVisible()
         await scratchTab.locator('.buffer-color').click()
         await expect(page.getByRole('menu')).toHaveCount(1)
         await expect(page.getByRole('menu', {name: 'Color for Scratch', exact: true})).toBeVisible()
         await expect(page.locator('.tab-item.active .title')).toHaveText('Scratch')
-        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'violet')
-        await page.getByRole('menuitemradio', {name: 'Indigo', exact: true}).click()
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'purple')
+        await page.getByRole('menuitemradio', {name: 'Teal', exact: true}).click()
         await expect(page.getByRole('menu')).toHaveCount(0)
-        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'indigo')
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'teal')
         await expect(page.locator('.status .note')).toHaveText('Scratch')
-        expect(NoteFormat.load(await fs.readFile(scratchPath, 'utf8')).metadata.color).toBe('indigo')
+        expect(NoteFormat.load(await fs.readFile(scratchPath, 'utf8')).metadata.color).toBe('teal')
 
         await scratchTab.locator('.title').click()
-        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'indigo')
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'teal')
         expect(await page.evaluate(() => window._heynote_editor.getContent())).toContain('Keep this content')
     })
 

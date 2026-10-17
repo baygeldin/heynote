@@ -3,7 +3,7 @@ import { HeynotePage } from './test-utils.js'
 import { NoteFormat } from '@/src/common/note-format.js'
 import path from 'node:path'
 
-const colors = ['Grey', 'Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet']
+const colors = ['Grey', 'Red', 'Orange', 'Green', 'Teal', 'Blue', 'Purple', 'Pink']
 
 async function createBuffer(page, name) {
     await page.locator('.add-tab').click()
@@ -56,8 +56,8 @@ for (const theme of ['light', 'dark']) {
         expect(blocks.size).toBe(colors.length)
 
         await page.reload()
-        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'violet')
-        await expect(tab.locator('.buffer-color')).toHaveAttribute('aria-label', 'Change color for Scratch (Violet)')
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'pink')
+        await expect(tab.locator('.buffer-color')).toHaveAttribute('aria-label', 'Change color for Scratch (Pink)')
         expect(await heynote.getBlockContent(1)).toBe('Second')
         expect(heynote.getErrors()).toEqual([])
     })
@@ -104,32 +104,42 @@ test('opening a picker activates its note and replaces the previous picker witho
     await expect(page.locator('.status .note')).toHaveText('Scratch')
     await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'orange')
     await expect(work.locator('.buffer-color')).toHaveAttribute('aria-expanded', 'false')
-    await page.getByRole('menuitemradio', { name: 'Indigo', exact: true }).click()
+    await page.getByRole('menuitemradio', { name: 'Teal', exact: true }).click()
     await expect(page.getByRole('menu')).toHaveCount(0)
     expect(NoteFormat.load(await heynote.getStoredBuffer('scratch.txt')).content).toBe('\n∞∞∞text\nKeep me')
     expect(NoteFormat.load(await heynote.getStoredBuffer(workPath)).metadata.color).toBe('blue')
 
-    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'indigo')
+    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'teal')
     expect(await heynote.getBlockContent(0)).toBe('Keep me')
     await scratch.hover()
     await scratch.locator('.close').click()
     await page.locator('body').press(heynote.agnosticKey('Mod+Shift+t'))
-    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'indigo')
+    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'teal')
     expect(heynote.getErrors()).toEqual([])
 })
 
-test('missing and unknown colors use grey, including external metadata changes', async ({ page }) => {
+test('saved colors use grey for missing or unknown values, including removed schemes', async ({ page }) => {
     const heynote = new HeynotePage(page)
     await heynote.goto()
     await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'grey')
     await chooseColor(page, page.locator('.tab-item.active'), 'Red')
-    for (const color of [undefined, 'unknown', '__proto__']) {
+    for (const color of [undefined, 'unknown', '__proto__', 'yellow', 'indigo', 'violet']) {
         const note = new NoteFormat()
+        note.metadata.name = 'Scratch'
         note.metadata.color = color
         note.content = '\n∞∞∞text\nLegacy note'
         await heynote.setContent(note.serialize())
         await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'grey')
-        await expect(page.locator('.buffer-color')).toHaveAttribute('aria-label', /\(Grey\)$/)
+        await expect(page.locator('.buffer-color')).toHaveAttribute('aria-label', 'Change color for Scratch (Grey)')
+        await page.locator('.buffer-color').click()
+        await expect(page.getByRole('menuitemradio')).toHaveCount(colors.length)
+        expect(await page.getByRole('menuitemradio').evaluateAll(options => options.map(option => option.getAttribute('aria-label')))).toEqual(colors)
+        await expect(page.getByRole('menuitemradio', { name: 'Grey', exact: true })).toHaveAttribute('aria-checked', 'true')
+        await page.getByRole('menuitemradio', { name: 'Grey', exact: true }).click()
+        await expect(page.getByRole('menu')).toHaveCount(0)
+        const saved = NoteFormat.load(await heynote.getStoredBuffer('scratch.txt'))
+        expect(saved.metadata.color).toBe('grey')
+        expect(saved.content).toBe(note.content)
     }
     expect(heynote.getErrors()).toEqual([])
 })
@@ -164,9 +174,9 @@ test('color picker is available beside the title when tabs are hidden', async ({
     await heynote.goto()
     await heynote.setSettings({ ...(await heynote.getSettings()), showTabs: false })
     const title = page.locator('.tab-bar > .title')
-    await chooseColor(page, title, 'Yellow')
-    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'yellow')
-    expect(NoteFormat.load(await heynote.getStoredBuffer('scratch.txt')).metadata.color).toBe('yellow')
+    await chooseColor(page, title, 'Pink')
+    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'pink')
+    expect(NoteFormat.load(await heynote.getStoredBuffer('scratch.txt')).metadata.color).toBe('pink')
     expect(heynote.getErrors()).toEqual([])
 })
 

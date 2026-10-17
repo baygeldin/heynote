@@ -2,14 +2,14 @@
 import grey from "./grey.js"
 import red from "./red.js"
 import orange from "./orange.js"
-import yellow from "./yellow.js"
 import green from "./green.js"
+import teal from "./teal.js"
 import blue from "./blue.js"
-import indigo from "./indigo.js"
-import violet from "./violet.js"
+import purple from "./purple.js"
+import pink from "./pink.js"
 
 /** @type {import("../types").ColorScheme[]} */
-export const COLOR_SCHEMES = [grey, red, orange, yellow, green, blue, indigo, violet]
+export const COLOR_SCHEMES = [grey, red, orange, green, teal, blue, purple, pink]
 
 /** @param {unknown} color */
 export function normalizeColorScheme(color) {

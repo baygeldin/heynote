@@ -2,8 +2,8 @@
 // Missing roles inherit from defaults.js; shared applies in both modes.
 /** @satisfies {import("../types").ColorScheme} */
 export default {
-    id: "violet",
-    label: "Violet",
+    id: "purple",
+    label: "Purple",
     swatch: "#aa62c8",
     shared: {
         ui: {
