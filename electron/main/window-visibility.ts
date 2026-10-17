@@ -6,38 +6,36 @@ type ShowWindowOptions = {
     isLinux: boolean
     ensureVisible: () => void
     focusApp: () => void
+    prepareToShowOnActiveSpace: () => void
 }
 
 export function showAndFocusWindow(win: BrowserWindow, options: ShowWindowOptions) {
     const wasVisible = win.isVisible()
 
-    // A macOS window can be visible on a different Space. Temporarily join all
-    // Spaces before restoring/showing/focusing it so activation brings the
-    // window here instead of switching back to its previous Space.
+    // Electron's all-workspaces flag doesn't change where activation takes us.
+    // Install AppKit's MoveToActiveSpace behavior before anything can activate
+    // the app, including restoring a minimized window.
     if (options.isMac) {
-        win.hide()
-        win.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true, skipTransformProcessType: true})
+        options.prepareToShowOnActiveSpace()
     }
-    try {
-        if (win.isMinimized()) {
-            win.restore()
-        }
-        options.ensureVisible()
-        if (!wasVisible || options.isMac) {
+    if (win.isMinimized()) {
+        win.restore()
+    }
+    options.ensureVisible()
+    if (options.isMac) {
+        // Order the window onto the active Space without first activating the
+        // application (show() activates the app before ordering its window).
+        win.showInactive()
+        win.focus()
+        options.focusApp()
+    } else {
+        if (!wasVisible) {
             // Some Linux WMs need hide()+show() to raise the window.
-            if (options.isLinux) {
-                win.hide()
-            }
+            if (options.isLinux) win.hide()
             win.show()
         }
         options.focusApp()
         win.focus()
-    } finally {
-        if (options.isMac) {
-            // Keep fullscreen auxiliary support, but pin the window to this
-            // Space again before returning to the event loop.
-            win.setVisibleOnAllWorkspaces(false, {visibleOnFullScreen: true, skipTransformProcessType: true})
-        }
     }
     if (!wasVisible) {
         // Hidden windows can lose editor focus to the sidebar when shown.

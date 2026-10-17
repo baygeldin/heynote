@@ -250,6 +250,30 @@ test.describe('electron app', { tag: "@e2e" }, () => {
         })).toBe(true)
     })
 
+    test.describe('macOS native Space behavior', () => {
+        test.skip(process.platform !== 'darwin', 'Requires AppKit')
+
+        test('uses MoveToActiveSpace during activation and removes it on the next run loop', async () => {
+            const prepared = await electronApp.evaluate(({ BrowserWindow }) => {
+                const bridge = require(require('node:path').join(process.cwd(), 'dist-electron/native/macos-window.node'))
+                const win = BrowserWindow.getAllWindows()[0]
+                const handle = win.getNativeWindowHandle()
+                bridge.prepareToShow(handle)
+                // Multiple summons in the same turn must not save a temporary
+                // MoveToActiveSpace flag as the permanent window behavior.
+                bridge.prepareToShow(handle)
+                win.showInactive()
+                win.focus()
+                return bridge.getState(handle)
+            })
+            expect(prepared).toMatchObject({movesToActiveSpace: true, onAllSpaces: false})
+            await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
+                const bridge = require(require('node:path').join(process.cwd(), 'dist-electron/native/macos-window.node'))
+                return bridge.getState(BrowserWindow.getAllWindows()[0].getNativeWindowHandle())
+            })).toMatchObject({movesToActiveSpace: false, onAllSpaces: false, onActiveSpace: true})
+        })
+    })
+
     test('pastes image data, stores it, and copy button writes image to clipboard', async () => {
         await expect.poll(async () => (await heynotePage.getBlocks()).length).toBeGreaterThan(0)
 

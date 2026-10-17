@@ -5,6 +5,7 @@
   "appId": "com.heynote.app",
   "asar": true,
   "asarUnpack": [
+    "dist-electron/native/*.node",
     "**/node_modules/@vscode/ripgrep/bin/**"
   ],
   //"icon": "public/favicon.ico",

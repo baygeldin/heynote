@@ -17,6 +17,7 @@ import { initializeAutoUpdate, checkForUpdates, updateAutoInstallUpdates } from 
 import { fixElectronCors } from './cors';
 import { ensureWindowBoundsVisible } from './window-bounds';
 import { showAndFocusWindow } from './window-visibility';
+import { prepareToShowOnActiveSpace, isOnActiveSpace } from './macos-window';
 import { 
     FileLibrary, 
     setupFileLibraryEventHandlers, 
@@ -136,6 +137,7 @@ function showWindow() {
             isLinux,
             ensureVisible: ensureWindowVisible,
             focusApp: () => app.focus({ steal: true }),
+            prepareToShowOnActiveSpace: () => prepareToShowOnActiveSpace(win),
         })
     } finally {
         showingWindow = false
@@ -378,7 +380,7 @@ function registerGlobalHotkey() {
                 if (!win) {
                     return
                 }
-                if (win.isFocused()) {
+                if (win.isFocused() && (!isMac || isOnActiveSpace(win))) {
                     if (isMac) {
                         // app.hide() only available on macOS
                         // We want to use app.hide() so that the menu bar also gets changed

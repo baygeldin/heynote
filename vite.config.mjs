@@ -8,11 +8,13 @@ import renderer from 'vite-plugin-electron-renderer'
 import license from 'rollup-plugin-license'
 import pkg from './package.json'
 import path from 'path'
+import buildMacosWindow from './scripts/electron/build-macos-window.mjs'
 
 import { keyHelpStr } from "./shared-utils/key-helper";
 import { LANGUAGES }  from "./src/editor/languages"
 
 rmSync('dist-electron', { recursive: true, force: true })
+buildMacosWindow()
 
 const isDevelopment = process.env.NODE_ENV === "development" || !!process.env.VSCODE_DEBUG
 const isProduction = process.env.NODE_ENV === "production"

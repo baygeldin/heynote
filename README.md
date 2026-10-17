@@ -45,7 +45,8 @@ host and container share the generated build directories. Run:
 npm run build:mac
 ```
 
-This runs the type check and production build, prepares ripgrep, and packages an
+This runs the type check and production build, compiles the macOS window helper
+using Apple's command line tools, prepares ripgrep, and packages an
 Apple Silicon DMG in `release/<version>/Heynote_<version>_arm64.dmg`. It uses ad hoc
 signing for local use, skips notarization, and never publishes a release. No Apple
 Developer certificate is required.
