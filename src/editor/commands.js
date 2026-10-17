@@ -96,14 +96,6 @@ const previousTab = (editor) => () => {
     return true
 }
 
-export function toggleAlwaysOnTop(editor) {
-    return (view) => {
-        const settingsStore = useSettingsStore()
-        settingsStore.updateSettings({alwaysOnTop:!settingsStore.settings.alwaysOnTop})
-        return true
-    }
-}
-
 export function toggleLeftPanel(editor) {
     return (view) => {
         useHeynoteStore().toggleLeftPanel()
@@ -195,7 +187,6 @@ const HEYNOTE_COMMANDS = {
     toggleSpellcheck: cmd(toggleSpellcheck, "Spellchecker", "Toggle Spellchecking"),
     enableSpellcheck: cmd(enableSpellcheck, "Spellchecker", "Enable Spellchecking"),
     disableSpellcheck: cmd(disableSpellcheck, "Spellchecker", "Disable Spellchecking"),
-    toggleAlwaysOnTop: cmd(toggleAlwaysOnTop, "Window", "Toggle Always on top", global),
 
     // commands without editor context
     paste: cmdLessContext(pasteCommand, "Clipboard", "Paste from clipboard"),

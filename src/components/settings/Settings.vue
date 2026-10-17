@@ -52,7 +52,6 @@
                 globalHotkey: this.initialSettings.globalHotkey,
                 showInDock: this.initialSettings.showInDock,
                 showInMenu: this.initialSettings.showInMenu,
-                alwaysOnTop: this.initialSettings.alwaysOnTop,
                 openAtLogin: this.initialSettings.openAtLogin,
                 startHidden: this.initialSettings.startHidden ?? false,
                 bracketClosing: this.initialSettings.bracketClosing,
@@ -140,7 +139,6 @@
                     globalHotkey: this.globalHotkey,
                     showInDock: this.showInDock,
                     showInMenu: this.showInMenu || !this.showInDock,
-                    alwaysOnTop: this.alwaysOnTop,
                     openAtLogin: this.openAtLogin,
                     startHidden: this.startHidden,
                     autoUpdate: this.autoUpdate,
@@ -265,14 +263,6 @@
                                     <template v-else>
                                         Show in system tray
                                     </template>
-                                </label>
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        v-model="alwaysOnTop"
-                                        @change="updateSettings"
-                                    />
-                                    Always on top
                                 </label>
                                 <label v-if="!isLinux">
                                     <input

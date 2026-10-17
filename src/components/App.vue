@@ -240,10 +240,6 @@
                 this.heynoteStore.executeCommand("toggleSpellcheck")
             },
 
-            toggleAlwaysOnTop() {
-                this.heynoteStore.executeCommand("toggleAlwaysOnTop")
-            },
-
             toggleLeftPanel() {
                 this.heynoteStore.executeCommand("toggleLeftPanel")
                 this.focusEditor()
@@ -312,7 +308,6 @@
             @formatCurrentBlock="formatCurrentBlock"
             @openSettings="showSettings = true"
             @toggleSpellcheck="toggleSpellcheck"
-            @toggleAlwaysOnTop="toggleAlwaysOnTop"
             @toggleLeftPanel="toggleLeftPanel"
             @click="() => {$refs.editor.focus()}"
             class="status" 

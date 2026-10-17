@@ -5,6 +5,58 @@
 
 <img src="https://heynote.com/img/logo.png" style="width:79px;">
 
+## HOW TO USE THIS FORK
+
+This is a personal fork of Heynote. Use the [devcontainer](#dev-container) to
+develop and preview changes, then build the app on your Mac to install it locally.
+
+The window always floats on top and has no pin toggle. On macOS it stays on the
+Space where it was shown. Enable and customize **Settings → General → Global
+Keyboard Shortcut** to show or hide it; summoning it from another Space brings
+it there. Switching Spaces alone leaves it in place. Fullscreen is disabled,
+as it was with the upstream pin feature.
+
+### Build and install on macOS (Apple Silicon)
+
+Run these steps in **macOS Terminal**, in the host checkout of this repository.
+The devcontainer runs Linux; the macOS packaging tools run on the host.
+
+Install **Node.js 24** and Apple's command line tools on your Mac. If the command
+line tools are not already installed, run this once and finish the installer:
+
+```sh
+xcode-select --install
+```
+
+Install the host dependencies once, and again whenever `package-lock.json` changes:
+
+```sh
+cd /path/to/heynote
+npm ci
+```
+
+The devcontainer keeps its Linux `node_modules` in a separate Docker volume, so
+the host can install its own macOS dependencies in the same checkout.
+
+After making changes, stop any running dev server before building, since the
+host and container share the generated build directories. Run:
+
+```sh
+npm run build:mac
+```
+
+This runs the type check and production build, prepares ripgrep, and packages an
+Apple Silicon DMG in `release/<version>/Heynote_<version>_arm64.dmg`. It uses ad hoc
+signing for local use, skips notarization, and never publishes a release. No Apple
+Developer certificate is required.
+
+Quit Heynote, open the DMG, and drag Heynote into **Applications**, replacing the
+previous copy if present. If macOS blocks the first launch, try opening it, then
+use **System Settings → Privacy & Security → Open Anyway**.
+
+In **Settings → Updates**, turn off **Periodically check for new updates** and
+**Automatically install new updates** until this fork has its own release setup.
+
 ## General Information
 
 - [Website](https://heynote.com)

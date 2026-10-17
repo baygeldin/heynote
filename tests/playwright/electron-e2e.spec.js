@@ -1,4 +1,4 @@
-import { test, expect, _electron as electron } from '@playwright/test'
+import { test as base, expect, _electron as electron } from '@playwright/test'
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs/promises'
@@ -8,6 +8,9 @@ import { FileLibrary } from '../../electron/main/file-library'
 import { HeynotePage } from "./test-utils.js"
 import { parseImagesFromString } from "../../src/editor/image/image-parsing.js"
 
+const test = base.extend({
+    initialConfig: [null, {option: true}],
+})
 
 async function ensureElectronBuild() {
     const mainPath = path.join(process.cwd(), 'dist-electron', 'main', 'index.js')
@@ -74,12 +77,16 @@ test.describe('electron app', { tag: "@e2e" }, () => {
     let userDataDir
     let page
 
-    test.beforeEach(async ({ }) => {
+    test.beforeEach(async ({ initialConfig }) => {
         test.setTimeout(60000)
         await ensureElectronBuild()
         tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'heynote-e2e-'))
         userDataDir = path.join(tmpRoot, 'user-data')
         await fs.mkdir(userDataDir)
+
+        if (initialConfig) {
+            await fs.writeFile(path.join(userDataDir, 'config.json'), JSON.stringify(initialConfig))
+        }
 
         electronApp = await electron.launch({
             args: ['--no-sandbox', 'tests/playwright/electron-runner.cjs'],
@@ -91,6 +98,8 @@ test.describe('electron app', { tag: "@e2e" }, () => {
 
         page = await electronApp.firstWindow()
         await page.waitForLoadState('domcontentloaded')
+        // Also wait for hidden windows to initialize their editor and quit handler.
+        await expect(page.locator('.cm-editor')).toBeAttached()
 
 
         heynotePage = new HeynotePage(page)
@@ -144,6 +153,101 @@ test.describe('electron app', { tag: "@e2e" }, () => {
         const library = new FileLibrary(path.join(userDataDir, 'notes'))
         const bufferContent = await library.load("scratch.txt")
         expect(bufferContent.endsWith("Hello World!")).toBeTruthy()
+    })
+
+    async function windowState() {
+        return electronApp.evaluate(({ BrowserWindow }) => {
+            const win = BrowserWindow.getAllWindows()[0]
+            return {
+                alwaysOnTop: win.isAlwaysOnTop(),
+                allWorkspaces: win.isVisibleOnAllWorkspaces(),
+                fullscreen: win.isFullScreen(),
+                fullscreenable: win.isFullScreenable(),
+                visible: win.isVisible(),
+            }
+        })
+    }
+
+    test('always floats on a single workspace and has no pin controls', async () => {
+        expect(await windowState()).toMatchObject({
+            alwaysOnTop: true,
+            allWorkspaces: false,
+            fullscreen: false,
+            fullscreenable: false,
+        })
+        await expect(page.locator('.status-block.pin')).toHaveCount(0)
+        await page.locator('.status-block.settings').click()
+        await expect(page.getByLabel('Always on top', {exact: true})).toHaveCount(0)
+
+        // Even a stale settings update must not turn floating off.
+        await page.evaluate(() => window.heynote.mainProcess.invoke('settings:set', {...window.heynote.settings, alwaysOnTop: false}))
+        await expect.poll(async () => {
+            const config = JSON.parse(await fs.readFile(path.join(userDataDir, 'config.json'), 'utf8'))
+            return config.settings.alwaysOnTop
+        }).toBe(true)
+        expect((await windowState()).alwaysOnTop).toBe(true)
+    })
+
+    test.describe('upgrading existing settings', () => {
+        test.use({initialConfig: {
+            settings: {
+                alwaysOnTop: false,
+                startHidden: true,
+                keyBindings: [
+                    {key: 'Mod-Shift-p', command: 'toggleAlwaysOnTop'},
+                    {key: 'Mod-Shift-f', command: 'openLibrarySearch'},
+                ],
+            },
+            windowConfig: {isFullScreen: true},
+        }})
+
+        test('migrates old pin preferences and ignores fullscreen restoration when started hidden', async () => {
+            expect(await windowState()).toMatchObject({alwaysOnTop: true, visible: false, fullscreen: false})
+            const config = JSON.parse(await fs.readFile(path.join(userDataDir, 'config.json'), 'utf8'))
+            expect(config.settings.alwaysOnTop).toBe(true)
+            expect(config.settings.keyBindings).toEqual([{key: 'Mod-Shift-f', command: 'openLibrarySearch'}])
+
+            // A second-instance activation uses the same summon path as the hotkey.
+            await electronApp.evaluate(({ app }) => app.emit('second-instance'))
+            await expect.poll(windowState).toMatchObject({
+                alwaysOnTop: true,
+                allWorkspaces: false,
+                fullscreen: false,
+                fullscreenable: false,
+                visible: true,
+            })
+        })
+    })
+
+    test('customizable global hotkey still hides and shows the floating window', async () => {
+        // Capture the callback while still using Electron's real registration.
+        // Invoking it avoids depending on an X11 key injection utility.
+        await electronApp.evaluate(({ globalShortcut }) => {
+            const register = globalShortcut.register.bind(globalShortcut)
+            globalShortcut.register = (accelerator, callback) => {
+                globalThis.__testHotkey = callback
+                return register(accelerator, callback)
+            }
+        })
+        await page.locator('.status-block.settings').click()
+        await page.getByLabel('Enable Global Hotkey').check()
+        await page.locator('.keyboard-hotkey select').selectOption('J')
+        await expect.poll(async () => electronApp.evaluate(({ globalShortcut }) => {
+            return globalShortcut.isRegistered('CmdOrCtrl+Shift+J')
+        })).toBe(true)
+        await page.locator('.settings .bottom-bar .close').click()
+
+        await electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus())
+        await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
+            return BrowserWindow.getAllWindows()[0].isFocused()
+        })).toBe(true)
+        await electronApp.evaluate(() => globalThis.__testHotkey())
+        await expect.poll(windowState).toMatchObject({visible: false, alwaysOnTop: true})
+        await electronApp.evaluate(() => globalThis.__testHotkey())
+        await expect.poll(windowState).toMatchObject({visible: true, alwaysOnTop: true, allWorkspaces: false})
+        await expect.poll(async () => page.evaluate(() => {
+            return document.activeElement?.classList.contains('cm-content')
+        })).toBe(true)
     })
 
     test('pastes image data, stores it, and copy button writes image to clipboard', async () => {

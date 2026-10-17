@@ -305,7 +305,6 @@ export function getAllKeyBindingsForCommand(command, keymapName, userKeymap, ema
     //console.log("debug:", "getKeyBindingForCommand", command, keymapName, userKeymap, emacsMetaKey)
     const capturingCommands = new Set([
         "nothing", 
-        "toggleAlwaysOnTop", 
         "toggleLeftPanel", "openBufferExplorer", "openLibrarySearch",
         "openLanguageSelector", "openBufferSelector", "openCreateNewBuffer", "openMoveToBuffer", "openCommandPalette", 
         "closeCurrentTab", "reopenLastClosedTab", "nextTab", "previousTab", 

@@ -68,7 +68,7 @@ const schema = {
             "bufferPath" : {type: "string", default: ""},
             "showInDock": {type: "boolean", default: true},
             "showInMenu": {type: "boolean", default: false},
-            "alwaysOnTop": {type: "boolean", default: false},
+            "alwaysOnTop": {type: "boolean", default: true},
             "openAtLogin": {type: "boolean", default: false},
             "startHidden": {type: "boolean", default: false},
             "bracketClosing": {type: "boolean", default: false},
@@ -162,7 +162,7 @@ const defaults = {
         bufferPath: "",
         showInDock: true,
         showInMenu: false,
-        alwaysOnTop: false,
+        alwaysOnTop: true,
         openAtLogin: false,
         startHidden: false,
         bracketClosing: false,
@@ -188,6 +188,13 @@ const defaults = {
 }
 
 const config = new Store({schema, defaults, name: isDev ? "config-dev" : "config"})
+
+// Migrate the upstream pin preference and any shortcut that could unpin it.
+config.set("settings.alwaysOnTop", true)
+const keyBindings = config.get("settings.keyBindings", [])
+if (keyBindings.some((binding) => binding.command === "toggleAlwaysOnTop")) {
+    config.set("settings.keyBindings", keyBindings.filter((binding) => binding.command !== "toggleAlwaysOnTop"))
+}
 
 if (process.env.HEYNOTE_TESTS) {
     config.set("clientId", TEST_CLIENT_ID)

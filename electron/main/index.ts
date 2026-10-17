@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import fs from "fs"
 
 import { 
-    WINDOW_CLOSE_EVENT, WINDOW_FULLSCREEN_STATE, WINDOW_FOCUS_STATE, FOCUS_EDITOR_EVENT, SETTINGS_CHANGE_EVENT,
+    WINDOW_CLOSE_EVENT, WINDOW_FULLSCREEN_STATE, WINDOW_FOCUS_STATE, SETTINGS_CHANGE_EVENT,
     TITLE_BAR_BG_LIGHT, TITLE_BAR_BG_LIGHT_BLURRED, TITLE_BAR_BG_DARK, TITLE_BAR_BG_DARK_BLURRED,
     SCRATCH_FILE_NAME, SAVE_TABS_STATE, LOAD_TABS_STATE, CONTEXT_MENU_CLOSED, GET_SYSTEM_LOCALE,
     LIBRARY_SEARCH_START, LIBRARY_SEARCH_CANCEL, LIBRARY_SEARCH_MATCH, LIBRARY_SEARCH_DONE, LIBRARY_SEARCH_ERROR,
@@ -16,6 +16,7 @@ import { isDev, isLinux, isMac, isWindows } from '../detect-platform';
 import { initializeAutoUpdate, checkForUpdates, updateAutoInstallUpdates } from './auto-update';
 import { fixElectronCors } from './cors';
 import { ensureWindowBoundsVisible } from './window-bounds';
+import { showAndFocusWindow } from './window-visibility';
 import { 
     FileLibrary, 
     setupFileLibraryEventHandlers, 
@@ -121,29 +122,23 @@ function ensureWindowVisible() {
     }
 }
 
+let showingWindow = false
 function showWindow() {
-    if (!win) {
+    // macOS can emit did-become-active synchronously while show() activates
+    // the app. Let the current summon finish before handling another one.
+    if (!win || showingWindow) {
         return
     }
-    const wasVisible = win.isVisible()
-    if (win.isMinimized()) {
-        win.restore()
-    }
-    ensureWindowVisible()
-    if (!wasVisible) {
-        // hide()+show() forces the window to the top of the window stack on
-        // Linux WMs that don't raise windows on a bare show() call
-        if (isLinux) {
-            win.hide()
-        }
-        win.show()
-    }
-    app.focus({ steal: true })
-    win.focus()
-    if (!wasVisible) {
-        // when a window is hidden, it seems like which element is focused is forgotten, so this
-        // forces focus to the editor (otherwise the sidebar would get focus if it's visible)
-        win.webContents.send(FOCUS_EDITOR_EVENT)
+    showingWindow = true
+    try {
+        showAndFocusWindow(win, {
+            isMac,
+            isLinux,
+            ensureVisible: ensureWindowVisible,
+            focusApp: () => app.focus({ steal: true }),
+        })
+    } finally {
+        showingWindow = false
     }
 }
 
@@ -166,12 +161,11 @@ async function createWindow() {
         y: CONFIG.get("windowConfig.y"),
     }
     const windowWasMaximized = CONFIG.get("windowConfig.isMaximized", false) as boolean
-    const windowWasFullScreen = CONFIG.get("windowConfig.isFullScreen", false) as boolean
     const windowWasVisibleOnQuit = CONFIG.get("windowConfig.visibleOnQuit", true)
     const startHidden = CONFIG.get("settings.startHidden", false) as boolean
     const hideOnStartup = startHidden || (wasOpenedAtLogin() && !windowWasVisibleOnQuit)
     let currentWindowIsMaximized = windowWasMaximized
-    let currentWindowIsFullScreen = windowWasFullScreen
+    let currentWindowIsFullScreen = false
 
     windowBounds = getVisibleWindowBounds(windowBounds)
 
@@ -192,10 +186,10 @@ async function createWindow() {
         backgroundColor: nativeTheme.shouldUseDarkColors ? '#262B37' : '#FFFFFF',
         accentColor: undefined,
         show: !hideOnStartup,
-        // We can't set fullscreen:true when hideOnStartup is true, because it will cancel out the show:false option
-        // instead we fullscreen the window the first time it is shown
-        // (see https://github.com/electron/electron/issues/42165)
-        ...(!hideOnStartup && windowWasFullScreen ? { fullscreen: true } : {}),
+        // This fork always floats on top within a single Space. Do not restore
+        // fullscreen state from an older installation, including on first show.
+        alwaysOnTop: true,
+        fullscreenable: false,
         //titleBarStyle: 'customButtonsOnHover',
         autoHideMenuBar: true,
         webPreferences: {
@@ -215,6 +209,9 @@ async function createWindow() {
             }, 
         } : {})
     }, windowBounds))
+
+    win.setAlwaysOnTop(true, "floating")
+    win.setVisibleOnAllWorkspaces(false, {visibleOnFullScreen: true, skipTransformProcessType: true})
 
     win.on("maximize", () => {
         currentWindowIsMaximized = true
@@ -272,9 +269,6 @@ async function createWindow() {
             if (windowWasMaximized) {
                 win?.maximize()
             }
-            if (windowWasFullScreen && !win?.isFullScreen()) {
-                win?.setFullScreen(true)
-            }
         })
     }
     // maximize window if it was maximized last time
@@ -287,8 +281,7 @@ async function createWindow() {
     // without this, there are cases when Cmd-Tabbing to Heynote won't show the window
     app.on("did-become-active", (event) => {
         if (!win.isVisible()) {
-            ensureWindowVisible()
-            win.show()
+            showWindow()
         }
     })
 
@@ -398,10 +391,7 @@ function registerGlobalHotkey() {
                         win.hide()
                     } else {
                         win.blur()
-                        if (CONFIG.get("settings.showInMenu") || CONFIG.get("settings.alwaysOnTop")) {
-                            // if we're using a tray icon, or alwaysOnTop is on, we want to completely hide the window
-                            win.hide()
-                        }
+                        win.hide()
                     }
                 } else {
                     showWindow()
@@ -457,40 +447,6 @@ function registerOpenAtLogin() {
     } : { openAtLogin })
 }
 
-function registerAlwaysOnTop() {
-    if (CONFIG.get("settings.alwaysOnTop")) {
-        const setAlwaysOnTop = () => {
-            win.setAlwaysOnTop(true, "floating");
-            win.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true, skipTransformProcessType:true});
-            win.setFullScreenable(false);
-
-            // Ensure the Dock icon remains visible on macOS
-            if (isMac && CONFIG.get("settings.showInDock")) {
-                setDockVisibility(true)
-            }
-
-            // windows looses focus (on Mac)
-            win.focus()
-        }
-        // if we're in fullscreen mode, we need to exit fullscreen before we can set alwaysOnTop
-        if (win.isFullScreen()) {
-            // on Mac setFullScreen happens asynchronously, so we need to wait for the event before we can disable alwaysOnTop
-            win.once("leave-full-screen", setAlwaysOnTop)
-            win.setFullScreen(false)
-        } else {
-            setAlwaysOnTop()
-        }
-    } else {
-        win.setAlwaysOnTop(false);
-
-        // without skipTransformProcessType, the window dock icon will re-appear on Mac if showInDock is false, 
-        // and calling app.dock.hide() immediately after this call won't fix it
-        win.setVisibleOnAllWorkspaces(false, {skipTransformProcessType:true});
-        
-        win.setFullScreenable(true);
-    }
-}
-
 // register heynote-file:// protocol
 registerProtocolBeforeAppReady()
 
@@ -507,7 +463,6 @@ app.whenReady().then(createWindow).then(async () => {
     registerGlobalHotkey()
     registerShowInDock()
     registerShowInMenu()
-    registerAlwaysOnTop()
     registerOpenAtLogin()
 })
 
@@ -678,11 +633,13 @@ ipcMain.handle("getInitErrors", () => {
 
 
 ipcMain.handle('settings:set', async (event, settings) => {
+    // Keep the legacy config field true even when settings come from an older
+    // renderer or installation; floating is now a permanent window property.
+    settings = {...settings, alwaysOnTop: true}
     let globalHotkeyChanged = settings.enableGlobalHotkey !== CONFIG.get("settings.enableGlobalHotkey") || settings.globalHotkey !== CONFIG.get("settings.globalHotkey")
     let showInDockChanged = settings.showInDock !== CONFIG.get("settings.showInDock");
     let showInMenuChanged = settings.showInMenu !== CONFIG.get("settings.showInMenu");
     let bufferPathChanged = settings.bufferPath !== CONFIG.get("settings.bufferPath");
-    let alwaysOnTopChanged = settings.alwaysOnTop !== CONFIG.get("settings.alwaysOnTop");
     let openAtLoginChanged = settings.openAtLogin !== CONFIG.get("settings.openAtLogin");
     let autoInstallUpdatesChanged = settings.autoInstallUpdates !== CONFIG.get("settings.autoInstallUpdates");
     CONFIG.set("settings", settings)
@@ -697,9 +654,6 @@ ipcMain.handle('settings:set', async (event, settings) => {
     }
     if (showInMenuChanged) {
         registerShowInMenu()
-    }
-    if (alwaysOnTopChanged) {
-        registerAlwaysOnTop()
     }
     if (openAtLoginChanged) {
         registerOpenAtLogin()
