@@ -165,7 +165,7 @@ As always, backup things that are important.
 
 ## Spellchecking
 
-Spellchecking can be toggled on or off by clicking the spellchecking icon in the status bar. Right-click a misspelled word to choose a correction or add it to the dictionary. Right-clicking the icon on Windows and Linux allows you to select the active dictionaries (on Mac, the default OS dictionary is used).
+Spellchecking can be toggled on or off by clicking the spellchecking icon in the status bar. It checks Plain Text and Markdown prose, excluding code and Math blocks, as well as inline and fenced code within Markdown. Right-click a misspelled word to choose a correction or add it to the dictionary. Right-clicking the icon on Windows and Linux allows you to select the active dictionaries (on Mac, the default OS dictionary is used).
 
 
 ## Linux<a id="linux"></a>

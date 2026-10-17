@@ -281,6 +281,24 @@ test.describe('electron app', { tag: "@e2e" }, () => {
             await page.evaluate(() => window.heynote.mainProcess.invoke('getVersion'))
             expect(await heynotePage.getBlockContent(0)).toBe('A different note')
         })
+
+        test('does not offer spelling corrections in code, including Markdown code', async () => {
+            for (const content of [
+                '\n∞∞∞javascript\nconst speling = 1',
+                '\n∞∞∞markdown\n```javascript\nconst speling = 1\n```',
+                '\n∞∞∞markdown\nProse with `speling` code',
+            ]) {
+                await heynotePage.setContent(content)
+                const count = await electronApp.evaluate(() => globalThis.__spellingMenus.length)
+                await rightClickWord('speling')
+                await expect.poll(() => electronApp.evaluate(() => globalThis.__spellingMenus.length)).toBe(count + 1)
+                expect(await menuLabels()).not.toContain('spelling')
+                expect(await menuLabels()).not.toContain('Add to dictionary')
+            }
+            await heynotePage.setContent('\n∞∞∞markdown\nProse with speling')
+            await rightClickWord('speling')
+            await expect.poll(menuLabels).toContain('spelling')
+        })
     })
 
     test('scratchpad colors persist in txt metadata across app restarts', async () => {
