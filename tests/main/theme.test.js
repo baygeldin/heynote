@@ -61,9 +61,9 @@ describe("color themes", () => {
         expect(Object.keys(custom).sort()).toEqual(Object.keys(grey).sort())
     })
 
-    it("offers eight schemes in picker order and falls back to grey for invalid metadata", () => {
-        expect(COLOR_SCHEMES.map(scheme => scheme.id)).toEqual(["grey", "red", "orange", "green", "teal", "blue", "purple", "pink"])
-        for (const value of [undefined, null, "unknown", "__proto__", 42, "yellow", "indigo", "violet"]) {
+    it("offers seven schemes in picker order and falls back to grey for invalid metadata", () => {
+        expect(COLOR_SCHEMES.map(scheme => scheme.id)).toEqual(["grey", "red", "orange", "green", "blue", "purple", "pink"])
+        for (const value of [undefined, null, "unknown", "__proto__", 42, "yellow", "indigo", "violet", "teal"]) {
             expect(normalizeColorScheme(value)).toBe("grey")
             expect(getColorScheme(value).id).toBe("grey")
         }

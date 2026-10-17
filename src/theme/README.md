@@ -4,7 +4,7 @@
 `ui` and `syntax` groups with named color roles. Edit these defaults to change
 every scheme that inherits a role.
 
-Each of the eight schemes has its own file in `schemes/`. A scheme contains its
+Each of the seven schemes has its own file in `schemes/`. A scheme contains its
 saved `id`, display `label`, picker `swatch`, and optional color overrides:
 
 ```js
@@ -40,6 +40,6 @@ The syntax-tag mapping and font/decoration rules live in
 `src/editor/theme/syntax.js`; editor layout stays in the other editor theme files.
 
 Scratchpad files continue to store only the scheme ID in their `color` metadata.
-The picker order is Grey, Red, Orange, Green, Teal, Blue, Purple, Pink.
+The picker order is Grey, Red, Orange, Green, Blue, Purple, Pink.
 Missing or unrecognized scheme IDs fall back to Grey.
 Choosing a color saves its current ID.

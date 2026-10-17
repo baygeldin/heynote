@@ -3,7 +3,7 @@ import { HeynotePage } from './test-utils.js'
 import { NoteFormat } from '@/src/common/note-format.js'
 import path from 'node:path'
 
-const colors = ['Grey', 'Red', 'Orange', 'Green', 'Teal', 'Blue', 'Purple', 'Pink']
+const colors = ['Grey', 'Red', 'Orange', 'Green', 'Blue', 'Purple', 'Pink']
 
 async function createBuffer(page, name) {
     await page.locator('.add-tab').click()
@@ -30,7 +30,7 @@ async function uiColors(page) {
 }
 
 for (const theme of ['light', 'dark']) {
-    test(`all eight scratchpad colors update the ${theme} UI and survive reload`, async ({ page }) => {
+    test(`all seven scratchpad colors update the ${theme} UI and survive reload`, async ({ page }) => {
         const heynote = new HeynotePage(page)
         await heynote.goto()
         await page.evaluate(theme => window.heynote.themeMode.set(theme), theme)
@@ -104,17 +104,17 @@ test('opening a picker activates its note and replaces the previous picker witho
     await expect(page.locator('.status .note')).toHaveText('Scratch')
     await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'orange')
     await expect(work.locator('.buffer-color')).toHaveAttribute('aria-expanded', 'false')
-    await page.getByRole('menuitemradio', { name: 'Teal', exact: true }).click()
+    await page.getByRole('menuitemradio', { name: 'Pink', exact: true }).click()
     await expect(page.getByRole('menu')).toHaveCount(0)
     expect(NoteFormat.load(await heynote.getStoredBuffer('scratch.txt')).content).toBe('\n∞∞∞text\nKeep me')
     expect(NoteFormat.load(await heynote.getStoredBuffer(workPath)).metadata.color).toBe('blue')
 
-    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'teal')
+    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'pink')
     expect(await heynote.getBlockContent(0)).toBe('Keep me')
     await scratch.hover()
     await scratch.locator('.close').click()
     await page.locator('body').press(heynote.agnosticKey('Mod+Shift+t'))
-    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'teal')
+    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'pink')
     expect(heynote.getErrors()).toEqual([])
 })
 
@@ -123,7 +123,7 @@ test('saved colors use grey for missing or unknown values, including removed sch
     await heynote.goto()
     await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'grey')
     await chooseColor(page, page.locator('.tab-item.active'), 'Red')
-    for (const color of [undefined, 'unknown', '__proto__', 'yellow', 'indigo', 'violet']) {
+    for (const color of [undefined, 'unknown', '__proto__', 'yellow', 'indigo', 'violet', 'teal']) {
         const note = new NoteFormat()
         note.metadata.name = 'Scratch'
         note.metadata.color = color

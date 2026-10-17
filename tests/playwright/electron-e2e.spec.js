@@ -198,14 +198,14 @@ test.describe('electron app', { tag: "@e2e" }, () => {
         await expect(page.getByRole('menu', {name: 'Color for Scratch', exact: true})).toBeVisible()
         await expect(page.locator('.tab-item.active .title')).toHaveText('Scratch')
         await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'purple')
-        await page.getByRole('menuitemradio', {name: 'Teal', exact: true}).click()
+        await page.getByRole('menuitemradio', {name: 'Pink', exact: true}).click()
         await expect(page.getByRole('menu')).toHaveCount(0)
-        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'teal')
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'pink')
         await expect(page.locator('.status .note')).toHaveText('Scratch')
-        expect(NoteFormat.load(await fs.readFile(scratchPath, 'utf8')).metadata.color).toBe('teal')
+        expect(NoteFormat.load(await fs.readFile(scratchPath, 'utf8')).metadata.color).toBe('pink')
 
         await scratchTab.locator('.title').click()
-        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'teal')
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'pink')
         expect(await page.evaluate(() => window._heynote_editor.getContent())).toContain('Keep this content')
     })
 
