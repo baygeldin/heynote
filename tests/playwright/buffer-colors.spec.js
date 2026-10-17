@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import { HeynotePage } from './test-utils.js'
 import { NoteFormat } from '@/src/common/note-format.js'
 
-const colors = ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet']
+const colors = ['Grey', 'Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet']
 
 async function createBuffer(page, name) {
     await page.locator('.add-tab').click()
@@ -29,7 +29,7 @@ async function uiColors(page) {
 }
 
 for (const theme of ['light', 'dark']) {
-    test(`all seven scratchpad colors update the ${theme} UI and survive reload`, async ({ page }) => {
+    test(`all eight scratchpad colors update the ${theme} UI and survive reload`, async ({ page }) => {
         const heynote = new HeynotePage(page)
         await heynote.goto()
         await page.evaluate(theme => window.heynote.themeMode.set(theme), theme)
@@ -46,13 +46,13 @@ for (const theme of ['light', 'dark']) {
             const ui = await uiColors(page)
             statuses.add(ui.status)
             blocks.add(ui.block)
-            if (color === 'Green') expect(ui).toEqual(original)
+            if (color === 'Grey') expect(ui).toEqual(original)
             const note = NoteFormat.load(await heynote.getStoredBuffer('scratch.txt'))
             expect(note.metadata).toMatchObject({ color: color.toLowerCase(), name: 'Scratch', custom: [42] })
             expect(note.content).toBe('\n∞∞∞text\nFirst\n∞∞∞text\nSecond')
         }
-        expect(statuses.size).toBe(7)
-        expect(blocks.size).toBe(7)
+        expect(statuses.size).toBe(colors.length)
+        expect(blocks.size).toBe(colors.length)
 
         await page.reload()
         await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'violet')
@@ -117,18 +117,18 @@ test('opening a picker activates its note and replaces the previous picker witho
     expect(heynote.getErrors()).toEqual([])
 })
 
-test('missing and unknown colors use green, including external metadata changes', async ({ page }) => {
+test('missing and unknown colors use grey, including external metadata changes', async ({ page }) => {
     const heynote = new HeynotePage(page)
     await heynote.goto()
-    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'green')
+    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'grey')
     await chooseColor(page, page.locator('.tab-item.active'), 'Red')
     for (const color of [undefined, 'unknown', '__proto__']) {
         const note = new NoteFormat()
         note.metadata.color = color
         note.content = '\n∞∞∞text\nLegacy note'
         await heynote.setContent(note.serialize())
-        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'green')
-        await expect(page.locator('.buffer-color')).toHaveAttribute('aria-label', /\(Green\)$/)
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'grey')
+        await expect(page.locator('.buffer-color')).toHaveAttribute('aria-label', /\(Grey\)$/)
     }
     expect(heynote.getErrors()).toEqual([])
 })
@@ -139,17 +139,20 @@ test('color picker supports keyboard selection, Escape, and outside dismissal', 
     const trigger = page.locator('.tab-item.active .buffer-color')
     await trigger.focus()
     await trigger.press('Enter')
-    await expect(page.getByRole('menuitemradio', { name: 'Green', exact: true })).toBeFocused()
+    await expect(page.getByRole('menuitemradio', { name: 'Grey', exact: true })).toBeFocused()
     await page.keyboard.press('ArrowRight')
-    await expect(page.getByRole('menuitemradio', { name: 'Blue', exact: true })).toBeFocused()
+    await expect(page.getByRole('menuitemradio', { name: 'Red', exact: true })).toBeFocused()
     await page.keyboard.press('Enter')
-    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'blue')
+    await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'red')
     await expect(trigger).toBeFocused()
     await trigger.press('Space')
+    await expect(page.getByRole('menu')).toBeVisible()
+    await expect(page.getByRole('menuitemradio', { name: 'Red', exact: true })).toBeFocused()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('menu')).toHaveCount(0)
     await expect(trigger).toBeFocused()
     await trigger.click()
+    await expect(page.getByRole('menu')).toBeVisible()
     await page.locator('.cm-content').click()
     await expect(page.getByRole('menu')).toHaveCount(0)
     expect(heynote.getErrors()).toEqual([])

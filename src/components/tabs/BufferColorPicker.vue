@@ -58,11 +58,16 @@
                 if (this.heynoteStore.currentBufferPath !== this.path || !this.$refs.trigger) return
                 const rect = this.$refs.trigger.getBoundingClientRect()
                 this.position = {
-                    left: `${Math.max(8, Math.min(rect.left, window.innerWidth - 240))}px`,
+                    left: `${Math.max(8, rect.left)}px`,
                     top: `${rect.bottom + 6}px`,
                 }
                 this.heynoteStore.colorPickerPath = this.path
                 await this.$nextTick()
+                if (this.isOpen && this.$refs.menu) {
+                    const width = this.$refs.menu.getBoundingClientRect().width
+                    this.position.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))}px`
+                    await this.$nextTick()
+                }
                 if (this.isOpen) {
                     this.$refs.menu?.querySelector('[aria-checked="true"]')?.focus()
                 }
