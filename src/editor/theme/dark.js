@@ -25,7 +25,7 @@ base0E = '#a3be8c', // green
 base0F = '#b48ead', // purple
 base10 = '#c6c097'; // light yellow
 
-const invalid = '#d30102', darkBackground = '#252a33', background = '#1e222a', tooltipBackground = base01, cursor = '#fff';
+const invalid = '#d30102', darkBackground = '#252a33', background = 'var(--editor-dark-background)', tooltipBackground = base01, cursor = '#fff';
 const highlightBackground = 'rgba(255,255,255,0.04)';
 
 const lineNumberColor = 'rgba(255,255,255, 0.15)';
@@ -66,8 +66,8 @@ const darkTheme = EditorView.theme({
         color: "#fff",
     },
     '.cm-panels .cm-textfield:focus': {
-        border: "1px solid #48b57e",
-        outline: "1px solid #48b57e",
+        border: "1px solid var(--accent-color)",
+        outline: "1px solid var(--accent-color)",
     },
     '.cm-panels .cm-button': {
         background: "#5f5f5f",
@@ -135,17 +135,17 @@ const darkTheme = EditorView.theme({
         }
     },
     ".heynote-blocks-layer .block-even": {
-        background: "#252B37",
-        borderTop: "1px solid #1e222a",
+        background: "var(--block-dark-even-background)",
+        borderTop: "1px solid var(--editor-dark-background)",
     },
     ".heynote-blocks-layer .block-odd": {
         //background: "#222f38",
-        background: "#213644",
-        borderTop: "1px solid #1e222a",
+        background: "var(--block-dark-odd-background)",
+        borderTop: "1px solid var(--editor-dark-background)",
     },
     ".heynote-math-result .inner": {
-        background: "#0e1217",
-        color: "#96cbb4",
+        background: "var(--status-dark-background)",
+        color: "var(--math-dark-color)",
         boxShadow: '0 0 3px rgba(0,0,0, 0.3)',
     },
     '.heynote-math-result-copied': {

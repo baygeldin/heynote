@@ -27,7 +27,7 @@ export const heynoteBase = EditorView.theme({
     },
     '.cm-panels .cm-button:focus': {
         border: "none",
-        outline: "2px solid #48b57e",
+        outline: "2px solid var(--accent-color)",
         outlineOffset: "1px",
     },
     ".cm-panel.cm-search label": {
@@ -38,7 +38,7 @@ export const heynoteBase = EditorView.theme({
         top: "2px",
     },
     ".cm-panel.cm-search input[type=checkbox]:focus-visible": {
-        outline: "2px auto #48b57e",
+        outline: "2px auto var(--accent-color)",
         outlineOffset: "2px",
         //borderRadius: "3px",
     },
@@ -53,7 +53,7 @@ export const heynoteBase = EditorView.theme({
         cursor: "pointer",
     },
     ".cm-panel.cm-search [name=close]:focus-visible" : {
-        border: "2px solid #48b57e",
+        border: "2px solid var(--accent-color)",
         outline: "none",
     },
 
@@ -116,7 +116,7 @@ export const heynoteBase = EditorView.theme({
         position: "relative",
     },
     '.heynote-math-result .inner': {
-        background: '#48b57e',
+        background: 'var(--accent-color)',
         //background: '#4892b5',
         color: '#fff',
         padding: '0px 4px',

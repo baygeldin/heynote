@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process'
 import { FileLibrary } from '../../electron/main/file-library'
 
 import { HeynotePage } from "./test-utils.js"
+import { NoteFormat } from "../../src/common/note-format.js"
 import { parseImagesFromString } from "../../src/editor/image/image-parsing.js"
 
 const test = base.extend({
@@ -153,6 +154,53 @@ test.describe('electron app', { tag: "@e2e" }, () => {
         const library = new FileLibrary(path.join(userDataDir, 'notes'))
         const bufferContent = await library.load("scratch.txt")
         expect(bufferContent.endsWith("Hello World!")).toBeTruthy()
+    })
+
+    test('scratchpad colors persist in txt metadata across app restarts', async () => {
+        await heynotePage.setContent('{"formatVersion":"2.0.0","name":"Scratch","custom":[42]}\n∞∞∞text\nKeep this content')
+        await page.locator('.tab-item.active .buffer-color').click()
+        await page.getByRole('menuitemradio', {name: 'Violet', exact: true}).click()
+        await expect(page.getByRole('menu')).toHaveCount(0)
+
+        const scratchPath = path.join(userDataDir, 'notes', 'scratch.txt')
+        await expect.poll(async () => {
+            return NoteFormat.load(await fs.readFile(scratchPath, 'utf8')).metadata.color
+        }).toBe('violet')
+        const saved = NoteFormat.load(await fs.readFile(scratchPath, 'utf8'))
+        expect(saved.metadata).toMatchObject({name: 'Scratch', custom: [42]})
+        expect(saved.content).toBe('\n∞∞∞text\nKeep this content')
+
+        await page.locator('.add-tab').click()
+        await page.locator('.note-selector .new-note').click()
+        await page.locator('.new-buffer input[placeholder="Name"]').fill('Work')
+        await page.locator('.new-buffer button[type="submit"]').click()
+        await expect(page.locator('.tab-item.active .title')).toHaveText('Work')
+        await page.locator('.tab-item.active .buffer-color').click()
+        await page.getByRole('menuitemradio', {name: 'Blue', exact: true}).click()
+        await expect(page.getByRole('menu')).toHaveCount(0)
+
+        await electronApp.close()
+        electronApp = await electron.launch({
+            args: ['--no-sandbox', 'tests/playwright/electron-runner.cjs'],
+            env: {...process.env, HEYNOTE_TEST_USER_DATA_DIR: userDataDir},
+        })
+        page = await electronApp.firstWindow()
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'blue')
+        await expect(page.locator('.tab-item.active .buffer-color')).toHaveAttribute('aria-label', 'Change color for Work (Blue)')
+
+        // Scratch has no cached editor yet. Its dot comes from the on-disk metadata.
+        const scratchTab = page.locator('.tab-item').filter({hasText: 'Scratch'})
+        await expect(scratchTab.locator('.buffer-color')).toHaveAttribute('aria-label', 'Change color for Scratch (Violet)')
+        await scratchTab.locator('.buffer-color').click()
+        await page.getByRole('menuitemradio', {name: 'Indigo', exact: true}).click()
+        await expect(page.getByRole('menu')).toHaveCount(0)
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'blue')
+        await expect(page.locator('.status .note')).toHaveText('Work')
+        expect(NoteFormat.load(await fs.readFile(scratchPath, 'utf8')).metadata.color).toBe('indigo')
+
+        await scratchTab.locator('.title').click()
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'indigo')
+        expect(await page.evaluate(() => window._heynote_editor.getContent())).toContain('Keep this content')
     })
 
     async function windowState() {

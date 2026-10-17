@@ -1,6 +1,7 @@
 import { toRaw, watch } from 'vue';
 import { defineStore } from "pinia"
 import { NoteFormat } from "../common/note-format"
+import { normalizeBufferColor } from "../common/buffer-colors.js"
 import { toSafeBrowserLocale } from "../util/locale.js"
 import { getInitialContent, getPlatformIdFromHeynotePlatform } from "../common/initial-content.js"
 import { useEditorCacheStore } from "./editor-cache"
@@ -248,6 +249,29 @@ export const useHeynoteStore = defineStore("heynote", {
                 return this.buffers[path].name || path
             }
             return path
+        },
+
+        getBufferColor(path) {
+            return normalizeBufferColor(this.buffers[path]?.color)
+        },
+
+        async updateBufferColor(path, color) {
+            const editorCacheStore = useEditorCacheStore()
+            const editor = toRaw(editorCacheStore.cache[path])
+            color = normalizeBufferColor(color)
+            if (editor) {
+                // Keep unsaved text, cursors, and folds in the cached editor.
+                await editor.contentLoadedPromise
+                editor.setColor(color)
+                await editor.save()
+            } else {
+                // An inactive tab may have no editor after startup or eviction.
+                // Update its file without creating an editor that changes the status bar.
+                const note = NoteFormat.load(await window.heynote.buffer.load(path))
+                note.metadata.color = color
+                await window.heynote.buffer.save(path, note.serialize())
+                this.buffers[path] = { ...this.buffers[path], color }
+            }
         },
 
         addRecentBuffer(path) {

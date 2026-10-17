@@ -152,7 +152,7 @@
             &:focus
                 outline: none
                 border: 1px solid #fff
-                outline: 2px solid #48b57e
+                outline: 2px solid var(--accent-color)
             +dark-mode
                 background: #3b3b3b
                 color: rgba(255,255,255, 0.9)
@@ -172,14 +172,14 @@
                 &:hover
                     background: #e2e2e2
                 &.selected
-                    background: #48b57e
+                    background: var(--accent-color)
                     color: #fff
                 +dark-mode
                     color: rgba(255,255,255, 0.65)
                     &:hover
                         background: #29292a
                     &.selected
-                        background: #1b6540
+                        background: var(--accent-dark-color)
                         color: rgba(255,255,255, 0.87)
                 ::v-deep(b)
                     font-weight: 700
