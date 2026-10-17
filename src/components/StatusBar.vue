@@ -25,7 +25,7 @@
         },
 
         computed: {
-            ...mapStores(useHeynoteStore),
+            ...mapStores(useHeynoteStore, useSettingsStore),
             ...mapState(useHeynoteStore, [
                 "currentBufferName",
                 "currentCursorLine",
@@ -40,7 +40,16 @@
                 "spellcheckEnabled",
                 "settings",
                 "commandKeyBindingsMap",
+                "theme",
             ]),
+
+            isDarkTheme() {
+                return this.theme === "dark" || (this.theme === "system" && window.matchMedia('(prefers-color-scheme: dark)').matches)
+            },
+
+            themeToggleTitle() {
+                return this.isDarkTheme ? "Switch to light mode" : "Switch to dark mode"
+            },
 
             languageName() {
                 return LANGUAGE_NAMES[this.currentLanguage] || this.currentLanguage
@@ -84,6 +93,10 @@
         },
 
         methods: {
+            toggleTheme() {
+                this.settingsStore.setTheme(this.isDarkTheme ? "light" : "dark")
+            },
+
             onSpellcheckingContextMenu(event) {
                 event.preventDefault()
                 window.heynote.mainProcess.invoke('showSpellcheckingContextMenu')
@@ -153,6 +166,22 @@
             <span class="icon icon-format"></span>
         </div>
 
+        <button
+            type="button"
+            class="status-block theme-toggle clickable"
+            :title="themeToggleTitle"
+            :aria-label="themeToggleTitle"
+            @click.stop="toggleTheme"
+            @mousedown.prevent
+        >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <template v-if="isDarkTheme">
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
+                </template>
+                <path v-else d="M20.9 13.3A9 9 0 0 1 10.7 3.1a9 9 0 1 0 10.2 10.2Z" />
+            </svg>
+        </button>
         <UpdateStatusItem 
             v-if="updatesEnabled" 
             :autoUpdate="autoUpdate"
@@ -251,6 +280,24 @@
             &.spellcheck-enabled .icon
                 background-image: url("@/assets/icons/spellcheck.svg")
         
+        .theme-toggle
+            display: flex
+            align-items: center
+            justify-content: center
+            flex-shrink: 0
+            padding-top: 0
+            padding-bottom: 0
+            background: none
+            border: none
+            color: inherit
+            &:focus-visible
+                outline: 1px solid currentColor
+                outline-offset: -3px
+            svg
+                display: block
+                width: 14px
+                height: 14px
+
         .settings
             padding-top: 0
             padding-bottom: 0
