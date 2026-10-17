@@ -16,6 +16,14 @@ function contrast(first, second) {
     return (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05)
 }
 
+function composite(overlay, background) {
+    const [red, green, blue, alpha] = overlay.match(/[\d.]+/g).map(Number)
+    const base = background.slice(1).match(/../g).map(channel => parseInt(channel, 16))
+    return "#" + [red, green, blue].map((channel, index) =>
+        Math.round(channel * alpha + base[index] * (1 - alpha)).toString(16).padStart(2, "0")
+    ).join("")
+}
+
 describe("color themes", () => {
     it("inherits mode defaults and overrides individual roles in each group", () => {
         const scheme = {
@@ -87,6 +95,20 @@ describe("color themes", () => {
             }
             expect(contrast(ui.statusText, ui.statusBackground), context).toBeGreaterThanOrEqual(4.5)
             expect(contrast(ui.mathText, ui.mathBackground), context).toBeGreaterThanOrEqual(4.5)
+        }
+    })
+
+    it.each(["light", "dark"])("keeps every %s syntax role readable on both blocks and the active line", mode => {
+        for (const scheme of COLOR_SCHEMES) {
+            const { ui, syntax } = resolveTheme(scheme, mode)
+            const backgrounds = [ui.blockEven, ui.blockOdd]
+            backgrounds.push(...backgrounds.map(background => composite(ui.activeLine, background)))
+            for (const [role, color] of Object.entries(syntax)) {
+                const foreground = color === "inherit" ? ui.editorText : color
+                for (const background of backgrounds) {
+                    expect(contrast(foreground, background), `${scheme.id} ${mode} ${role} on ${background}`).toBeGreaterThanOrEqual(4.5)
+                }
+            }
         }
     })
 

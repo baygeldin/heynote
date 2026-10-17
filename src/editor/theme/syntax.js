@@ -2,8 +2,8 @@
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language"
 import { tags } from "@lezer/highlight"
 
-// These roles map language tags to palette colors; literal colors live in theme/defaults.js.
-/** @satisfies {Record<Exclude<keyof import("../../theme/types").SyntaxColors, "invalidUnderline">, import("@lezer/highlight").Tag>} */
+// These roles map language tags to the defaults and per-scheme syntax palettes.
+/** @satisfies {Record<Exclude<keyof import("../../theme/types").SyntaxColors, "invalidUnderline">, import("@codemirror/language").TagStyle["tag"]>} */
 const syntaxTags = {
     strikethrough: tags.strikethrough,
     keyword: tags.keyword,
@@ -13,8 +13,8 @@ const syntaxTags = {
     property: tags.propertyName,
     macro: tags.macroName,
     variable: tags.variableName,
-    function: tags.function(tags.variableName),
-    functionDefinition: tags.function(tags.definition(tags.variableName)),
+    function: [tags.function(tags.variableName), tags.function(tags.propertyName)],
+    functionDefinition: [tags.function(tags.definition(tags.variableName)), tags.function(tags.definition(tags.propertyName))],
     label: tags.labelName,
     color: tags.color,
     constant: tags.constant(tags.name),

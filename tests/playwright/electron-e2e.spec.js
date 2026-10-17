@@ -8,6 +8,12 @@ import { FileLibrary } from '../../electron/main/file-library'
 import { HeynotePage } from "./test-utils.js"
 import { NoteFormat } from "../../src/common/note-format.js"
 import { parseImagesFromString } from "../../src/editor/image/image-parsing.js"
+import { resolveTheme } from "../../src/theme/resolve.js"
+import { getColorScheme } from "../../src/theme/schemes/index.js"
+
+function rgb(hex) {
+    return `rgb(${hex.slice(1).match(/../g).map(channel => parseInt(channel, 16)).join(', ')})`
+}
 
 const test = base.extend({
     initialConfig: [null, {option: true}],
@@ -214,24 +220,26 @@ test.describe('electron app', { tag: "@e2e" }, () => {
         await page.emulateMedia({colorScheme: null})
         await heynotePage.setContent('{"formatVersion":"2.0.0","name":"Scratch","color":"blue"}\n∞∞∞javascript\nconst count = 42;\n∞∞∞text\nSecond block')
         const keyword = page.locator('.cm-content .cm-line span').filter({hasText: /^const$/}).first()
+        const light = resolveTheme(getColorScheme('blue'), 'light')
+        const dark = resolveTheme(getColorScheme('blue'), 'dark')
 
         await page.evaluate(() => window.heynote.themeMode.set('light'))
         await expect(page.locator('html')).toHaveAttribute('theme', 'light')
-        await expect(keyword).toHaveCSS('color', 'rgb(119, 0, 136)')
-        await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(235, 242, 250)')
+        await expect(keyword).toHaveCSS('color', rgb(light.syntax.keyword))
+        await expect(page.locator('.block-odd')).toHaveCSS('background-color', rgb(light.ui.blockOdd))
 
         await page.getByRole('button', {name: 'Switch to dark mode', exact: true}).click()
         await expect(page.locator('html')).toHaveAttribute('theme', 'dark')
-        await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
-        await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(37, 56, 75)')
+        await expect(keyword).toHaveCSS('color', rgb(dark.syntax.keyword))
+        await expect(page.locator('.block-odd')).toHaveCSS('background-color', rgb(dark.ui.blockOdd))
 
         await heynotePage.waitForContentSaved()
         await page.reload()
         await expect(page.locator('html')).toHaveAttribute('theme', 'dark')
-        await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
+        await expect(keyword).toHaveCSS('color', rgb(dark.syntax.keyword))
         await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'blue')
         await page.getByRole('button', {name: 'Switch to light mode', exact: true}).click()
-        await expect(keyword).toHaveCSS('color', 'rgb(119, 0, 136)')
+        await expect(keyword).toHaveCSS('color', rgb(light.syntax.keyword))
         expect(heynotePage.getErrors()).toEqual([])
     })
 

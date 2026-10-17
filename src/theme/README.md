@@ -94,3 +94,51 @@ Related accents, selections, borders, tabs, and math surfaces use the same famil
 Footer labels use the palette text color without additional transparency, and
 footer hover states darken the background to preserve text contrast.
 Syntax roles continue to inherit independently.
+
+## Syntax references
+
+Each scheme adopts a different established editor theme family, with a matched
+light and dark variant. The choices pair each family's token relationships with
+our existing tinted surfaces:
+
+| Scheme | Light reference | Dark reference | Why this pairing |
+| --- | --- | --- | --- |
+| Grey | [Atom One Light](https://github.com/atom/one-light-syntax) | [Atom One Dark](https://github.com/atom/one-dark-syntax) | Balanced violet keywords, blue functions, green strings, and warm literals on neutral grey. |
+| Red | [GitHub Light Default](https://github.com/primer/github-vscode-theme) | GitHub Dark Default | Coral/red keywords anchor the warm surfaces; purple functions and blue strings provide separation. |
+| Orange | [Gruvbox Material Light](https://github.com/sainnhe/gruvbox-material) | Gruvbox Material Dark | Warm foregrounds, earthy green strings/functions, ochre types, and soft coral keywords suit amber. |
+| Green | [Everforest Light](https://github.com/sainnhe/everforest) | Everforest Dark | Green functions and aqua strings complement teal; red keywords and purple numbers remain distinct. |
+| Blue | [Kanagawa Lotus](https://github.com/rebelot/kanagawa.nvim) | Kanagawa Wave | Blue functions, violet keywords, green strings, and pink numbers suit the cool surfaces. |
+| Purple | [Catppuccin Latte](https://github.com/catppuccin/nvim) | Catppuccin Mocha | Mauve keywords, blue functions, peach literals, and lavender properties complement violet. |
+| Pink | [Rosé Pine Dawn](https://github.com/rose-pine/neovim) | Rosé Pine Moon | Rose functions, gold strings, pine keywords, and iris annotations complement rose. |
+
+The palette and syntax-role assignments were checked against the upstream
+implementations, rather than inferred from screenshots:
+
+- Atom One: [`colors.less`](https://github.com/atom/one-dark-syntax/blob/master/styles/colors.less) and [`syntax/_base.less`](https://github.com/atom/one-dark-syntax/blob/master/styles/syntax/_base.less), with their One Light counterparts.
+- GitHub: [`src/theme.js`](https://github.com/primer/github-vscode-theme/blob/main/src/theme.js), using the light/dark color scales in Primer Primitives 7.10.0.
+- Gruvbox Material: [`autoload/gruvbox_material.vim`](https://github.com/sainnhe/gruvbox-material/blob/master/autoload/gruvbox_material.vim) (`material` foreground) and [`colors/gruvbox-material.vim`](https://github.com/sainnhe/gruvbox-material/blob/master/colors/gruvbox-material.vim).
+- Everforest: [`palette.md`](https://github.com/sainnhe/everforest/blob/master/palette.md), including its syntax semantics and Tree-sitter mappings.
+- Kanagawa: [`colors.lua`](https://github.com/rebelot/kanagawa.nvim/blob/master/lua/kanagawa/colors.lua) and [`themes.lua`](https://github.com/rebelot/kanagawa.nvim/blob/master/lua/kanagawa/themes.lua), specifically `lotus.syn` and `wave.syn`.
+- Catppuccin: [`palettes`](https://github.com/catppuccin/nvim/tree/main/lua/catppuccin/palettes), [`groups/syntax.lua`](https://github.com/catppuccin/nvim/blob/main/lua/catppuccin/groups/syntax.lua), and [`groups/treesitter.lua`](https://github.com/catppuccin/nvim/blob/main/lua/catppuccin/groups/treesitter.lua).
+- Rosé Pine: [`palette.lua`](https://github.com/rose-pine/neovim/blob/main/lua/rose-pine/palette.lua) and [`rose-pine.lua`](https://github.com/rose-pine/neovim/blob/main/lua/rose-pine.lua), using Dawn and Moon.
+
+These are adaptations for Heynote. Original token hues and semantic groupings
+are retained where possible; lightness is adjusted in OKLCH when a color needs
+more contrast on our backgrounds. Chroma is reduced only to stay within sRGB.
+The adjustment target was 4.6:1; tests enforce at least 4.5:1 for every resolved
+syntax foreground on both block colors, including the 4% active-line overlay.
+This includes comments and punctuation. Selections and search overlays have
+their own colors and are outside that contrast check.
+
+`ui.editorText` adopts the reference foreground so ordinary identifiers and
+uncolored text fit the syntax palette. Grey's One palettes live in `defaults.js`;
+the other schemes specify every syntax role in their mode's `syntax` group.
+Each role remains independently editable using the same override rules.
+Function colors cover standalone functions and member calls. The language
+grammar determines the available roles; JavaScript object-method declarations,
+for example, receive `definitionProperty`, while calls receive `function`.
+Markdown uses the same family's headings, links, and inline-code colors.
+The editor's existing bold, italic, and underline behavior still applies.
+
+Upstream MIT notices are included in [`public/theme-licenses.txt`](../../public/theme-licenses.txt),
+which is copied into renderer and web builds.

@@ -1,9 +1,15 @@
 import { test, expect } from '@playwright/test'
 import { HeynotePage } from './test-utils.js'
 import { NoteFormat } from '@/src/common/note-format.js'
+import { resolveTheme } from '@/src/theme/resolve.js'
+import { getColorScheme } from '@/src/theme/schemes/index.js'
 import path from 'node:path'
 
 const colors = ['Grey', 'Red', 'Orange', 'Green', 'Blue', 'Purple', 'Pink']
+
+function rgb(hex) {
+    return `rgb(${hex.slice(1).match(/../g).map(channel => parseInt(channel, 16)).join(', ')})`
+}
 
 async function createBuffer(page, name) {
     await page.locator('.add-tab').click()
@@ -224,8 +230,10 @@ test('scheme syntax and UI overrides inherit by mode and reset when switching sc
         const { getColorScheme } = await import(moduleUrl)
         const red = getColorScheme('red')
         red.shared.syntax = { keyword: '#123456' }
+        delete red.light.syntax.keyword
+        delete red.dark.syntax.keyword
         red.light.ui.blockOdd = '#ffeedd'
-        red.dark.syntax = { string: '#fedcba' }
+        red.dark.syntax.string = '#fedcba'
         await window.heynote.themeMode.set('light')
     }, '/@fs/' + path.resolve('src/theme/schemes/index.js').replaceAll('\\', '/'))
     await heynote.setContent('{"formatVersion":"2.0.0","name":"Scratch","color":"grey"}\n∞∞∞javascript\nconst greeting = "hello";\nconst count = 42;\n∞∞∞text\nSecond block')
@@ -236,22 +244,22 @@ test('scheme syntax and UI overrides inherit by mode and reset when switching sc
 
     await chooseColor(page, tab, 'Red')
     await expect(keyword).toHaveCSS('color', 'rgb(18, 52, 86)')
-    await expect(string).toHaveCSS('color', 'rgb(170, 17, 17)')
-    await expect(number).toHaveCSS('color', 'rgb(26, 85, 126)')
+    await expect(string).toHaveCSS('color', rgb(resolveTheme(getColorScheme('red'), 'light').syntax.string))
+    await expect(number).toHaveCSS('color', rgb(resolveTheme(getColorScheme('red'), 'light').syntax.number))
     await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(255, 238, 221)')
 
     await page.evaluate(() => window.heynote.themeMode.set('dark'))
     await expect(keyword).toHaveCSS('color', 'rgb(18, 52, 86)')
     await expect(string).toHaveCSS('color', 'rgb(254, 220, 186)')
-    await expect(number).toHaveCSS('color', 'rgb(180, 142, 173)')
+    await expect(number).toHaveCSS('color', rgb(resolveTheme(getColorScheme('red'), 'dark').syntax.number))
     await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(54, 37, 34)')
 
     await chooseColor(page, tab, 'Blue')
-    await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
-    await expect(string).toHaveCSS('color', 'rgb(163, 190, 140)')
+    await expect(keyword).toHaveCSS('color', rgb(resolveTheme(getColorScheme('blue'), 'dark').syntax.keyword))
+    await expect(string).toHaveCSS('color', rgb(resolveTheme(getColorScheme('blue'), 'dark').syntax.string))
     await page.evaluate(() => window.heynote.themeMode.set('light'))
-    await expect(keyword).toHaveCSS('color', 'rgb(119, 0, 136)')
-    await expect(string).toHaveCSS('color', 'rgb(170, 17, 17)')
+    await expect(keyword).toHaveCSS('color', rgb(resolveTheme(getColorScheme('blue'), 'light').syntax.keyword))
+    await expect(string).toHaveCSS('color', rgb(resolveTheme(getColorScheme('blue'), 'light').syntax.string))
     expect(heynote.getErrors()).toEqual([])
 })
 
@@ -263,12 +271,12 @@ test('system mode resolves the correct UI and syntax defaults when the system ap
     await heynote.setContent('{"formatVersion":"2.0.0","name":"Scratch"}\n∞∞∞javascript\nconst count = 42;')
     const keyword = page.locator('.cm-content .cm-line span').filter({ hasText: /^const$/ }).first()
     await expect(page.locator('html')).toHaveAttribute('theme', 'dark')
-    await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
+    await expect(keyword).toHaveCSS('color', rgb(resolveTheme(getColorScheme('grey'), 'dark').syntax.keyword))
     await expect(page.locator('.status')).toHaveCSS('background-color', 'rgb(80, 80, 80)')
 
     await page.emulateMedia({ colorScheme: 'light' })
     await expect(page.locator('html')).toHaveAttribute('theme', 'light')
-    await expect(keyword).toHaveCSS('color', 'rgb(119, 0, 136)')
+    await expect(keyword).toHaveCSS('color', rgb(resolveTheme(getColorScheme('grey'), 'light').syntax.keyword))
     await expect(page.locator('.status')).toHaveCSS('background-color', 'rgb(111, 111, 111)')
     expect(heynote.getErrors()).toEqual([])
 })
