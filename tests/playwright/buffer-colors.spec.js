@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { HeynotePage } from './test-utils.js'
 import { NoteFormat } from '@/src/common/note-format.js'
+import path from 'node:path'
 
 const colors = ['Grey', 'Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet']
 
@@ -166,5 +167,61 @@ test('color picker is available beside the title when tabs are hidden', async ({
     await chooseColor(page, title, 'Yellow')
     await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'yellow')
     expect(NoteFormat.load(await heynote.getStoredBuffer('scratch.txt')).metadata.color).toBe('yellow')
+    expect(heynote.getErrors()).toEqual([])
+})
+
+test('scheme syntax and UI overrides inherit by mode and reset when switching schemes', async ({ page }) => {
+    const heynote = new HeynotePage(page)
+    await heynote.goto()
+    await page.evaluate(async moduleUrl => {
+        const { getColorScheme } = await import(moduleUrl)
+        const red = getColorScheme('red')
+        red.shared.syntax = { keyword: '#123456' }
+        red.light.ui.blockOdd = '#ffeedd'
+        red.dark.syntax = { string: '#fedcba' }
+        await window.heynote.themeMode.set('light')
+    }, '/@fs/' + path.resolve('src/theme/schemes/index.js').replaceAll('\\', '/'))
+    await heynote.setContent('{"formatVersion":"2.0.0","name":"Scratch","color":"grey"}\n∞∞∞javascript\nconst greeting = "hello";\nconst count = 42;\n∞∞∞text\nSecond block')
+    const keyword = page.locator('.cm-content .cm-line span').filter({ hasText: /^const$/ }).first()
+    const string = page.locator('.cm-content .cm-line span').filter({ hasText: /^"hello"$/ }).first()
+    const number = page.locator('.cm-content .cm-line span').filter({ hasText: /^42$/ }).first()
+    const tab = page.locator('.tab-item.active')
+
+    await chooseColor(page, tab, 'Red')
+    await expect(keyword).toHaveCSS('color', 'rgb(18, 52, 86)')
+    await expect(string).toHaveCSS('color', 'rgb(170, 17, 17)')
+    await expect(number).toHaveCSS('color', 'rgb(26, 85, 126)')
+    await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(255, 238, 221)')
+
+    await page.evaluate(() => window.heynote.themeMode.set('dark'))
+    await expect(keyword).toHaveCSS('color', 'rgb(18, 52, 86)')
+    await expect(string).toHaveCSS('color', 'rgb(254, 220, 186)')
+    await expect(number).toHaveCSS('color', 'rgb(180, 142, 173)')
+    await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(75, 37, 37)')
+
+    await chooseColor(page, tab, 'Blue')
+    await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
+    await expect(string).toHaveCSS('color', 'rgb(163, 190, 140)')
+    await page.evaluate(() => window.heynote.themeMode.set('light'))
+    await expect(keyword).toHaveCSS('color', 'rgb(119, 0, 136)')
+    await expect(string).toHaveCSS('color', 'rgb(170, 17, 17)')
+    expect(heynote.getErrors()).toEqual([])
+})
+
+test('system mode resolves the correct UI and syntax defaults when the system appearance changes', async ({ page }) => {
+    const heynote = new HeynotePage(page)
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await heynote.goto()
+    await page.evaluate(() => window.heynote.themeMode.set('system'))
+    await heynote.setContent('{"formatVersion":"2.0.0","name":"Scratch"}\n∞∞∞javascript\nconst count = 42;')
+    const keyword = page.locator('.cm-content .cm-line span').filter({ hasText: /^const$/ }).first()
+    await expect(page.locator('html')).toHaveAttribute('theme', 'dark')
+    await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
+    await expect(page.locator('.status')).toHaveCSS('background-color', 'rgb(20, 20, 20)')
+
+    await page.emulateMedia({ colorScheme: 'light' })
+    await expect(page.locator('html')).toHaveAttribute('theme', 'light')
+    await expect(keyword).toHaveCSS('color', 'rgb(119, 0, 136)')
+    await expect(page.locator('.status')).toHaveCSS('background-color', 'rgb(140, 140, 140)')
     expect(heynote.getErrors()).toEqual([])
 })

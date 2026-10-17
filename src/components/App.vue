@@ -11,7 +11,8 @@
 
     import { OPEN_SETTINGS_EVENT, MOVE_BLOCK_EVENT, CHANGE_BUFFER_EVENT } from '@/src/common/constants'
     import { setImageFile } from "@/src/editor/image/image-parsing.js"
-    import { getBufferColorStyles } from "@/src/common/buffer-colors.js"
+    import { getColorScheme } from "@/src/theme/schemes/index.js"
+    import { applyTheme } from "@/src/theme/apply.js"
 
     import StatusBar from './StatusBar.vue'
     import Editor from './Editor.vue'
@@ -112,13 +113,10 @@
         },
 
         watch: {
-            currentBufferColor: {
+            activeColorTheme: {
                 immediate: true,
-                handler(color) {
-                    document.documentElement.dataset.bufferColor = color
-                    for (const [name, value] of Object.entries(getBufferColorStyles(color))) {
-                        document.documentElement.style.setProperty(name, value)
-                    }
+                handler() {
+                    applyTheme(getColorScheme(this.currentBufferColor), this.settingsStore.theme)
                 },
             },
             // when a dialog is closed, we want to focus the editor
@@ -162,6 +160,10 @@
 
             currentBufferColor() {
                 return this.heynoteStore.getBufferColor(this.currentBufferPath)
+            },
+
+            activeColorTheme() {
+                return `${this.currentBufferColor}:${this.settingsStore.theme}`
             },
 
             dialogVisible() {

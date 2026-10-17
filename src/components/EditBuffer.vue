@@ -261,7 +261,7 @@
                 &:focus
                     outline: none
                     border: 1px solid #fff
-                    outline: 2px solid var(--accent-color)
+                    outline: 2px solid var(--ui-accent)
                 &.error
                     background: #ffe9e9
                 +dark-mode
@@ -289,7 +289,7 @@
                 padding-left: 10px
                 padding-right: 10px
                 &:focus
-                    outline-color: var(--accent-color)
+                    outline-color: var(--ui-accent)
                 +dark-mode
                     background: #444
                     border: none

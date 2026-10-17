@@ -209,6 +209,32 @@ test.describe('electron app', { tag: "@e2e" }, () => {
         expect(await page.evaluate(() => window._heynote_editor.getContent())).toContain('Keep this content')
     })
 
+    test('native light and dark changes apply the resolved UI and syntax palettes', async () => {
+        // Use Electron's native appearance instead of Playwright's default light emulation.
+        await page.emulateMedia({colorScheme: null})
+        await heynotePage.setContent('{"formatVersion":"2.0.0","name":"Scratch","color":"blue"}\n∞∞∞javascript\nconst count = 42;\n∞∞∞text\nSecond block')
+        const keyword = page.locator('.cm-content .cm-line span').filter({hasText: /^const$/}).first()
+
+        await page.evaluate(() => window.heynote.themeMode.set('light'))
+        await expect(page.locator('html')).toHaveAttribute('theme', 'light')
+        await expect(keyword).toHaveCSS('color', 'rgb(119, 0, 136)')
+        await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(235, 242, 250)')
+
+        await page.getByRole('button', {name: 'Switch to dark mode', exact: true}).click()
+        await expect(page.locator('html')).toHaveAttribute('theme', 'dark')
+        await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
+        await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(37, 56, 75)')
+
+        await heynotePage.waitForContentSaved()
+        await page.reload()
+        await expect(page.locator('html')).toHaveAttribute('theme', 'dark')
+        await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
+        await expect(page.locator('html')).toHaveAttribute('data-buffer-color', 'blue')
+        await page.getByRole('button', {name: 'Switch to light mode', exact: true}).click()
+        await expect(keyword).toHaveCSS('color', 'rgb(119, 0, 136)')
+        expect(heynotePage.getErrors()).toEqual([])
+    })
+
     async function windowState() {
         return electronApp.evaluate(({ BrowserWindow }) => {
             const win = BrowserWindow.getAllWindows()[0]

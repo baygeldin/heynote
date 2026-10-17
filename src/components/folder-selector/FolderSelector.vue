@@ -285,7 +285,7 @@
         &:focus, &:focus-within
             outline: none
             border: 1px solid #fff
-            outline: 2px solid var(--accent-color)
+            outline: 2px solid var(--ui-accent)
         +dark-mode
             background: #262626
             border: 1px solid #363636

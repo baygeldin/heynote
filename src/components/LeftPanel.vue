@@ -199,10 +199,10 @@
                 &:focus
                     outline: none
                 &:focus-visible
-                    box-shadow: inset 0 0 0 2px var(--accent-focus-color)
+                    box-shadow: inset 0 0 0 2px var(--ui-focus)
                     z-index: 1
                     +dark-mode
-                        box-shadow: inset 0 0 0 2px var(--accent-color)
+                        box-shadow: inset 0 0 0 2px var(--ui-accent)
                 &:last-child  
                     margin-right: 0
                 &:hover

@@ -83,18 +83,18 @@
             +dark-mode
                 background-image: url('@/assets/icons/caret-down-white.svg')
         &.selected
-            background-color: var(--accent-color)
+            background-color: var(--ui-accent-selected)
             color: #fff
             background-image: url('@/assets/icons/caret-right-white.svg')
             &.open
                 background-image: url('@/assets/icons/caret-down-white.svg')
             &:hover
-                background-color: var(--accent-hover-color)
+                background-color: var(--ui-accent-selected-hover)
             +dark-mode
-                background-color: var(--accent-dark-color)
+                background-color: var(--ui-accent-selected)
                 color: rgba(255,255,255, 0.87)
                 &:hover
-                    background-color: var(--accent-dark-hover-color)
+                    background-color: var(--ui-accent-selected-hover)
             .new-folder
                 display: block
                 color: rgba(255,255,255, 0.9)

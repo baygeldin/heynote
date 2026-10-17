@@ -1,6 +1,6 @@
 <script>
     import { mapStores } from 'pinia'
-    import { BUFFER_COLORS, normalizeBufferColor } from '@/src/common/buffer-colors.js'
+    import { COLOR_SCHEMES, normalizeColorScheme } from '@/src/theme/schemes/index.js'
     import { useHeynoteStore } from '@/src/stores/heynote-store'
     import { useErrorStore } from '@/src/stores/error-store'
 
@@ -9,7 +9,7 @@
 
         data() {
             return {
-                colors: BUFFER_COLORS,
+                colors: COLOR_SCHEMES,
                 position: {},
                 saving: false,
             }
@@ -21,7 +21,7 @@
                 return this.heynoteStore.colorPickerPath === this.path
             },
             selectedColor() {
-                return this.colors.find(option => option.id === normalizeBufferColor(this.color))
+                return this.colors.find(option => option.id === normalizeColorScheme(this.color))
             },
         },
 
@@ -187,7 +187,7 @@
         cursor: pointer
         flex-shrink: 0
         &:focus-visible
-            outline: 2px solid var(--accent-color)
+            outline: 2px solid var(--ui-accent)
             outline-offset: 1px
 
     .buffer-color span, .buffer-color-menu span
@@ -221,10 +221,10 @@
             background: transparent
             cursor: pointer
             &:focus-visible
-                outline: 2px solid var(--accent-color)
+                outline: 2px solid var(--ui-accent)
                 outline-offset: 1px
             &[aria-checked=true]
-                border-color: var(--accent-color)
+                border-color: var(--ui-accent)
             span
                 width: 16px
                 height: 16px

@@ -182,10 +182,10 @@
                 background: #333
                 border-bottom: 2px solid #3c3c3c
             &.ghost
-                background: var(--accent-color)
+                background: var(--ui-accent-selected)
                 color: #fff
                 +dark-mode
-                    background: var(--accent-dark-color)
+                    background: var(--ui-accent-selected)
             th
                 text-align: left
                 font-weight: 600

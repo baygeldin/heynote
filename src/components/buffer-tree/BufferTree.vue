@@ -746,7 +746,7 @@
         &:focus
             outline: none
             .item.selected
-                outline: 1px solid var(--accent-color)
+                outline: 1px solid var(--ui-accent)
                 outline-offset: -1px
                 z-index: 1
         &.root-drop-target
@@ -778,9 +778,9 @@
                 +dark-mode
                     background-color: rgba(255,255,255, 0.08)
             &.active
-                background-color: var(--buffer-tree-selected-light)
+                background-color: var(--ui-buffer-tree-selected)
                 +dark-mode
-                    background-color: var(--buffer-tree-selected-dark)
+                    background-color: var(--ui-buffer-tree-selected)
             &.scratch
                 font-style: italic
         &.folder

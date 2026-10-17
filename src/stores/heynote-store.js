@@ -1,7 +1,7 @@
 import { toRaw, watch } from 'vue';
 import { defineStore } from "pinia"
 import { NoteFormat } from "../common/note-format"
-import { normalizeBufferColor } from "../common/buffer-colors.js"
+import { normalizeColorScheme } from "../theme/schemes/index.js"
 import { toSafeBrowserLocale } from "../util/locale.js"
 import { getInitialContent, getPlatformIdFromHeynotePlatform } from "../common/initial-content.js"
 import { useEditorCacheStore } from "./editor-cache"
@@ -253,13 +253,13 @@ export const useHeynoteStore = defineStore("heynote", {
         },
 
         getBufferColor(path) {
-            return normalizeBufferColor(this.buffers[path]?.color)
+            return normalizeColorScheme(this.buffers[path]?.color)
         },
 
         async updateBufferColor(path, color) {
             const editorCacheStore = useEditorCacheStore()
             const editor = toRaw(editorCacheStore.cache[path])
-            color = normalizeBufferColor(color)
+            color = normalizeColorScheme(color)
             if (editor) {
                 // Keep unsaved text, cursors, and folds in the cached editor.
                 await editor.contentLoadedPromise
