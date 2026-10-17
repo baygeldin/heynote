@@ -1,5 +1,5 @@
 const { app, Menu } = require("electron")
-import { OPEN_SETTINGS_EVENT, UNDO_EVENT, REDO_EVENT, MOVE_BLOCK_EVENT, DELETE_BLOCK_EVENT, CHANGE_BUFFER_EVENT, SELECT_ALL_EVENT, SCRATCH_FILE_NAME } from '@/src/common/constants'
+import { OPEN_SETTINGS_EVENT, UNDO_EVENT, REDO_EVENT, MOVE_BLOCK_EVENT, DELETE_BLOCK_EVENT, CHANGE_BUFFER_EVENT, SELECT_ALL_EVENT, SCRATCH_FILE_NAME, REPLACE_MISSPELLING_EVENT } from '@/src/common/constants'
 import { openAboutWindow } from "./about";
 import { quit } from "./index"
 
@@ -235,8 +235,29 @@ export function getTrayMenu(win, showWindow) {
     ])
 }
 
-export function getEditorContextMenu(win) {
+export function getEditorContextMenu(win, params = {}) {
+    const spellingItems = []
+    if (params.spellcheckEnabled && params.misspelledWord) {
+        for (const suggestion of params.dictionarySuggestions || []) {
+            spellingItems.push({
+                label: suggestion,
+                click: () => win.webContents.send(REPLACE_MISSPELLING_EVENT, suggestion),
+            })
+        }
+        if (spellingItems.length === 0) {
+            spellingItems.push({label: 'No spelling suggestions', enabled: false})
+        }
+        spellingItems.push(
+            {
+                label: 'Add to dictionary',
+                click: () => win.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord),
+            },
+            {type: 'separator'},
+        )
+    }
+
     return Menu.buildFromTemplate([
+        ...spellingItems,
         undoMenuItem,
         redoMenuItem,
         {type: 'separator'},

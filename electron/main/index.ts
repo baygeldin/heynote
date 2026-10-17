@@ -6,7 +6,7 @@ import fs from "fs"
 import { 
     WINDOW_CLOSE_EVENT, WINDOW_FULLSCREEN_STATE, WINDOW_FOCUS_STATE, SETTINGS_CHANGE_EVENT,
     TITLE_BAR_BG_LIGHT, TITLE_BAR_BG_LIGHT_BLURRED, TITLE_BAR_BG_DARK, TITLE_BAR_BG_DARK_BLURRED,
-    SCRATCH_FILE_NAME, SAVE_TABS_STATE, LOAD_TABS_STATE, CONTEXT_MENU_CLOSED, GET_SYSTEM_LOCALE,
+    SCRATCH_FILE_NAME, SAVE_TABS_STATE, LOAD_TABS_STATE, CONTEXT_MENU_CLOSED, EDITOR_CONTEXT_MENU_EVENT, GET_SYSTEM_LOCALE,
     LIBRARY_SEARCH_START, LIBRARY_SEARCH_CANCEL, LIBRARY_SEARCH_MATCH, LIBRARY_SEARCH_DONE, LIBRARY_SEARCH_ERROR,
 } from '@/src/common/constants'
 
@@ -214,6 +214,22 @@ async function createWindow() {
 
     win.setAlwaysOnTop(true, "floating")
     win.setVisibleOnAllWorkspaces(false, {visibleOnFullScreen: true, skipTransformProcessType: true})
+
+    win.webContents.on("context-menu", (_event, params) => {
+        // The renderer checks whether the target belongs to the editor. Send
+        // only serializable data; params.frame is a native Electron object.
+        const zoomFactor = win.webContents.getZoomFactor()
+        win?.webContents.send(EDITOR_CONTEXT_MENU_EVENT, {
+            x: params.x,
+            y: params.y,
+            // DOM hit testing uses CSS pixels; native menu placement uses DIP.
+            clientX: params.x / zoomFactor,
+            clientY: params.y / zoomFactor,
+            menuSourceType: params.menuSourceType,
+            misspelledWord: params.misspelledWord,
+            dictionarySuggestions: params.dictionarySuggestions,
+        })
+    })
 
     win.on("maximize", () => {
         currentWindowIsMaximized = true
@@ -509,8 +525,11 @@ ipcMain.handle("setWindowTitle", (event, title) => {
     win?.setTitle(title)
 })
 
-ipcMain.handle("showEditorContextMenu", () =>  {
-    getEditorContextMenu(win).popup({window:win});
+ipcMain.handle("showEditorContextMenu", (event, params) => {
+    if (event.sender !== win?.webContents) {
+        return
+    }
+    getEditorContextMenu(win, params).popup({window: win, x: params?.x, y: params?.y})
 })
 
 ipcMain.handle("showMainMenu", (event, x, y) =>  {

@@ -17,6 +17,8 @@ export const SELECT_ALL_EVENT = "select-all"
 export const SAVE_TABS_STATE = "save-tabs-state"
 export const LOAD_TABS_STATE = "load-tabs-state"
 export const CONTEXT_MENU_CLOSED = "context-menu-closed"
+export const EDITOR_CONTEXT_MENU_EVENT = "editor-context-menu"
+export const REPLACE_MISSPELLING_EVENT = "replace-misspelling"
 export const GET_SYSTEM_LOCALE = "getSystemLocale"
 
 export const LIBRARY_SEARCH_START = "library-search:start"

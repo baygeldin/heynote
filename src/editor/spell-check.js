@@ -10,6 +10,25 @@ export function spellcheckConfig(enabled) {
     ]
 }
 
+export function getSpellingRange(view, {misspelledWord, clientX, clientY, menuSourceType}) {
+    if (!misspelledWord) {
+        return null
+    }
+    const pos = menuSourceType === "keyboard"
+        ? view.state.selection.main.head
+        : view.posAtCoords({x: clientX, y: clientY})
+    if (pos === null) {
+        return null
+    }
+    const line = view.state.doc.lineAt(pos)
+    const offset = pos - line.from
+    const start = line.text.lastIndexOf(misspelledWord, offset)
+    if (start < 0 || start + misspelledWord.length < offset) {
+        return null
+    }
+    return {from: line.from + start, to: line.from + start + misspelledWord.length}
+}
+
 export function toggleSpellcheck(editor) {
     return (view) => {
         const settingsStore = useSettingsStore()

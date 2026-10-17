@@ -4,7 +4,8 @@
     import { mapActions, mapState, mapWritableState, mapStores } from 'pinia'
     import { useHeynoteStore } from "../stores/heynote-store.js"
     import { useEditorCacheStore } from "../stores/editor-cache"
-    import { REDO_EVENT, WINDOW_CLOSE_EVENT, DELETE_BLOCK_EVENT, UNDO_EVENT, SELECT_ALL_EVENT } from '@/src/common/constants';
+    import { REDO_EVENT, WINDOW_CLOSE_EVENT, DELETE_BLOCK_EVENT, UNDO_EVENT, SELECT_ALL_EVENT, EDITOR_CONTEXT_MENU_EVENT, REPLACE_MISSPELLING_EVENT } from '@/src/common/constants';
+    import { getSpellingRange } from "../editor/spell-check.js"
 
 
     export default {
@@ -24,6 +25,8 @@
                 onRedo: null,
                 onDeleteBlock: null,
                 onSelectAll: null,
+                onContextMenu: null,
+                onReplaceMisspelling: null,
             }
         },
 
@@ -75,6 +78,50 @@
             }
             window.heynote.mainProcess.on(SELECT_ALL_EVENT, this.onSelectAll)
 
+            // Use Electron's context-menu data so the native spellchecker can
+            // identify the clicked word and provide replacement suggestions.
+            let spellingContext = null
+            this.onContextMenu = (_event, params) => {
+                spellingContext = null
+                const target = params.menuSourceType === "keyboard"
+                    ? document.activeElement
+                    : document.elementFromPoint(params.clientX, params.clientY)
+                if (this.$refs.editor.contains(target) && target.closest(".cm-scroller")) {
+                    const editor = toRaw(this.editor)
+                    const range = getSpellingRange(editor.view, params)
+                    if (editor.spellcheckEnabled && range) {
+                        spellingContext = {editor, doc: editor.view.state.doc, ...range}
+                    }
+                    window.heynote.mainProcess.invoke("showEditorContextMenu", {
+                        ...params,
+                        spellcheckEnabled: spellingContext !== null,
+                    })
+                }
+            }
+            window.heynote.mainProcess.on(EDITOR_CONTEXT_MENU_EVENT, this.onContextMenu)
+
+            // Keep the document, undo history, and autosave in sync by applying
+            // corrections through CodeMirror rather than native DOM editing.
+            this.onReplaceMisspelling = (_event, suggestion) => {
+                if (!spellingContext) {
+                    return
+                }
+                const {editor, doc, from, to} = spellingContext
+                spellingContext = null
+                // A menu opened for another buffer or an older document must
+                // never replace text in the current editor.
+                if (toRaw(this.editor) !== editor || editor.view.state.doc !== doc) {
+                    return
+                }
+                editor.view.dispatch({
+                    changes: {from, to, insert: suggestion},
+                    selection: {anchor: from + suggestion.length},
+                    userEvent: "input.replace",
+                })
+                editor.focus()
+            }
+            window.heynote.mainProcess.on(REPLACE_MISSPELLING_EVENT, this.onReplaceMisspelling)
+
             // if debugSyntaxTree prop is set, display syntax tree for debugging
             if (this.debugSyntaxTree) {
                 setInterval(() => {
@@ -106,6 +153,8 @@
             window.heynote.mainProcess.off(REDO_EVENT, this.onRedo)
             window.heynote.mainProcess.off(DELETE_BLOCK_EVENT, this.onDeleteBlock)
             window.heynote.mainProcess.off(SELECT_ALL_EVENT, this.onSelectAll)
+            window.heynote.mainProcess.off(EDITOR_CONTEXT_MENU_EVENT, this.onContextMenu)
+            window.heynote.mainProcess.off(REPLACE_MISSPELLING_EVENT, this.onReplaceMisspelling)
             this.editorCacheStore.tearDown();
         },
 
@@ -178,18 +227,13 @@
             focus() {
                 toRaw(this.editor).focus()
             },
-
-            onContextMenu(event) {
-                event.preventDefault()
-                window.heynote.mainProcess.invoke("showEditorContextMenu")
-            },
         },
     }
 </script>
 
 <template>
     <div>
-        <div class="editor" ref="editor" @contextmenu="onContextMenu"></div>
+        <div class="editor" ref="editor"></div>
         <div 
             v-if="debugSyntaxTree"
             v-html="syntaxTreeDebugContent"

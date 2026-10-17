@@ -162,6 +162,127 @@ test.describe('electron app', { tag: "@e2e" }, () => {
         expect(bufferContent.endsWith("Hello World!")).toBeTruthy()
     })
 
+    test.describe('spelling context menu', () => {
+        test.use({initialConfig: {settings: {spellcheckEnabled: true, autoUpdate: false}}})
+
+        test.beforeEach(async () => {
+            await electronApp.evaluate(({BrowserWindow, Menu}) => {
+                globalThis.__spellingMenus = []
+                globalThis.__spellingWord = 'speling'
+                globalThis.__spellingSuggestions = ['spelling']
+                globalThis.__nativeContextMenus = 0
+                // Keep the real context-menu event and menu callbacks. Supply
+                // deterministic suggestions without downloading dictionaries,
+                // and capture the native popup so Playwright can choose an item.
+                BrowserWindow.getAllWindows()[0].webContents.prependListener('context-menu', (_event, params) => {
+                    globalThis.__nativeContextMenus += 1
+                    params.misspelledWord = globalThis.__spellingWord
+                    params.dictionarySuggestions = globalThis.__spellingSuggestions
+                })
+                Menu.prototype.popup = function () {
+                    globalThis.__spellingMenus.push(this)
+                }
+            })
+        })
+
+        async function rightClickWord(word, last = false) {
+            const point = await page.evaluate(({word, last}) => {
+                const view = window._heynote_editor.view
+                const text = view.state.doc.toString()
+                const pos = (last ? text.lastIndexOf(word) : text.indexOf(word)) + Math.floor(word.length / 2)
+                const coords = view.coordsAtPos(pos)
+                return {x: coords.left, y: (coords.top + coords.bottom) / 2}
+            }, {word, last})
+            await page.mouse.click(point.x, point.y, {button: 'right'})
+        }
+
+        async function menuLabels() {
+            return electronApp.evaluate(() => globalThis.__spellingMenus.at(-1)?.items.map(item => item.label))
+        }
+
+        async function chooseMenuItem(label) {
+            await electronApp.evaluate(({BrowserWindow}, label) => {
+                const item = globalThis.__spellingMenus.at(-1).items.find(item => item.label === label)
+                if (!item) throw new Error(`Missing menu item: ${label}`)
+                item.click(undefined, BrowserWindow.getAllWindows()[0])
+            }, label)
+        }
+
+        test('corrects only the clicked occurrence, saves, and supports undo and redo', async () => {
+            await electronApp.evaluate(({BrowserWindow}) => {
+                BrowserWindow.getAllWindows()[0].webContents.setZoomFactor(1.5)
+            })
+            await heynotePage.setContent('\n∞∞∞text\nOne speling two speling.')
+            await heynotePage.setCursorPosition(12)
+            await rightClickWord('speling', true)
+            await expect.poll(menuLabels).toContain('spelling')
+            expect(await menuLabels()).toEqual(expect.arrayContaining(['Add to dictionary', 'Undo', 'Cut', 'Copy', 'Paste', 'Delete block']))
+
+            await chooseMenuItem('spelling')
+            await expect.poll(() => heynotePage.getBlockContent(0)).toBe('One speling two spelling.')
+            await heynotePage.waitForContentSaved()
+            const scratchPath = path.join(userDataDir, 'notes', 'scratch.txt')
+            expect(NoteFormat.load(await fs.readFile(scratchPath, 'utf8')).content).toBe('\n∞∞∞text\nOne speling two spelling.')
+
+            await page.keyboard.press(heynotePage.agnosticKey('Mod+z'))
+            await expect.poll(() => heynotePage.getBlockContent(0)).toBe('One speling two speling.')
+            await page.keyboard.press(heynotePage.agnosticKey('Mod+Shift+z'))
+            await expect.poll(() => heynotePage.getBlockContent(0)).toBe('One speling two spelling.')
+        })
+
+        test('offers dictionary learning when there are no suggestions', async () => {
+            const word = `heynotespellingtest${Date.now()}`
+            await electronApp.evaluate((_electron, word) => {
+                globalThis.__spellingWord = word
+                globalThis.__spellingSuggestions = []
+            }, word)
+            await heynotePage.setContent(`\n∞∞∞text\n${word}`)
+            await rightClickWord(word)
+            await expect.poll(menuLabels).toContain('No spelling suggestions')
+            expect(await electronApp.evaluate(() => globalThis.__spellingMenus.at(-1).items[0].enabled)).toBe(false)
+            try {
+                await chooseMenuItem('Add to dictionary')
+                await expect.poll(() => electronApp.evaluate(({BrowserWindow}) => {
+                    return BrowserWindow.getAllWindows()[0].webContents.session.listWordsInSpellCheckerDictionary()
+                })).toContain(word)
+            } finally {
+                await electronApp.evaluate(({BrowserWindow}, word) => {
+                    BrowserWindow.getAllWindows()[0].webContents.session.removeWordFromSpellCheckerDictionary(word)
+                }, word)
+            }
+            expect(await heynotePage.getBlockContent(0)).toBe(word)
+        })
+
+        test('respects disabled spellchecking and keeps editor commands out of search inputs', async () => {
+            await heynotePage.setContent('\n∞∞∞text\nspeling')
+            await heynotePage.executeCommand('disableSpellcheck')
+            await expect(page.locator('.cm-content')).toHaveAttribute('spellcheck', 'false')
+            await rightClickWord('speling')
+            await expect.poll(menuLabels).toContain('Undo')
+            expect(await menuLabels()).not.toContain('spelling')
+            expect(await menuLabels()).not.toContain('Add to dictionary')
+
+            await page.keyboard.press(heynotePage.agnosticKey('Mod+f'))
+            const input = page.locator('.search-panel input').first()
+            await expect(input).toBeVisible()
+            const nativeCount = await electronApp.evaluate(() => globalThis.__nativeContextMenus)
+            await input.click({button: 'right'})
+            await expect.poll(() => electronApp.evaluate(() => globalThis.__nativeContextMenus)).toBeGreaterThan(nativeCount)
+            await page.evaluate(() => window.heynote.mainProcess.invoke('getVersion'))
+            expect(await electronApp.evaluate(() => globalThis.__spellingMenus.length)).toBe(1)
+        })
+
+        test('ignores a correction if the document changed after the menu opened', async () => {
+            await heynotePage.setContent('\n∞∞∞text\nspeling')
+            await rightClickWord('speling')
+            await expect.poll(menuLabels).toContain('spelling')
+            await heynotePage.setContent('\n∞∞∞text\nA different note')
+            await chooseMenuItem('spelling')
+            await page.evaluate(() => window.heynote.mainProcess.invoke('getVersion'))
+            expect(await heynotePage.getBlockContent(0)).toBe('A different note')
+        })
+    })
+
     test('scratchpad colors persist in txt metadata across app restarts', async () => {
         await heynotePage.setContent('{"formatVersion":"2.0.0","name":"Scratch","custom":[42]}\n∞∞∞text\nKeep this content')
         await page.locator('.tab-item.active .buffer-color').click()
