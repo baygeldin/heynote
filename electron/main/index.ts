@@ -192,7 +192,6 @@ async function createWindow() {
         // fullscreen state from an older installation, including on first show.
         alwaysOnTop: true,
         fullscreenable: false,
-        //titleBarStyle: 'customButtonsOnHover',
         autoHideMenuBar: true,
         webPreferences: {
             preload,
@@ -202,8 +201,7 @@ async function createWindow() {
             nodeIntegration: true,
             contextIsolation: true,
         },
-        titleBarStyle: "hidden" as const, // customButtonsOnHover
-        trafficLightPosition: { x: 8, y: 8 },
+        titleBarStyle: "hidden" as const,
         ...(!isMac ? {
             titleBarOverlay: {
                 color: nativeTheme.shouldUseDarkColors ? TITLE_BAR_BG_DARK : TITLE_BAR_BG_LIGHT,
@@ -211,6 +209,10 @@ async function createWindow() {
             }, 
         } : {})
     }, windowBounds))
+
+    if (isMac) {
+        win.setWindowButtonVisibility(false)
+    }
 
     win.setAlwaysOnTop(true, "floating")
     win.setVisibleOnAllWorkspaces(false, {visibleOnFullScreen: true, skipTransformProcessType: true})

@@ -52,11 +52,7 @@
                 +dark-mode
                     background-color: #3a3a3a
         +platform-mac
-            width: 80px
-            button
-                display: none
-        +platform-mac-fullscreen
-            width: 16px
+            display: none
         +platform-webapp
             button
                 display: none

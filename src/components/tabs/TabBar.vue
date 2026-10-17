@@ -242,6 +242,8 @@
             color: #444
             +dark-mode
                 color: #aaa
+            +platform-mac
+                padding: 0 8px
             +platform-windows-linux
                 padding: 0 140px
 
