@@ -15,8 +15,14 @@ async function createBuffer(page, name) {
 
 async function chooseColor(page, tab, color) {
     await tab.locator('.buffer-color').click()
-    await page.getByRole('menuitemradio', { name: color, exact: true }).click()
+    const option = page.getByRole('menuitemradio', { name: color, exact: true })
+    const swatch = await option.locator('span').evaluate(element => getComputedStyle(element).backgroundColor)
+    await option.click()
     await expect(page.getByRole('menu')).toHaveCount(0)
+    await expect(page.locator('.status')).toHaveCSS('background-color', swatch)
+    await expect(tab.locator('.buffer-color span')).toHaveCSS('background-color', swatch)
+    const footerText = await page.locator('.status').evaluate(element => getComputedStyle(element).color)
+    await expect(page.locator('.status .line-number')).toHaveCSS('color', footerText)
 }
 
 async function uiColors(page) {
@@ -62,6 +68,37 @@ for (const theme of ['light', 'dark']) {
         expect(heynote.getErrors()).toEqual([])
     })
 }
+
+test('tab swatches and an open picker follow mode changes for active and inactive notes', async ({ page }) => {
+    const heynote = new HeynotePage(page)
+    await heynote.goto()
+    await page.evaluate(() => window.heynote.themeMode.set('light'))
+    const scratch = page.locator('.tab-item').filter({ has: page.locator('.title', { hasText: /^Scratch$/ }) })
+    await chooseColor(page, scratch, 'Red')
+    await createBuffer(page, 'Work')
+    const work = page.locator('.tab-item.active')
+    await chooseColor(page, work, 'Blue')
+    await work.locator('.buffer-color').click()
+    const swatches = page.getByRole('menuitemradio').locator('span')
+    const light = await swatches.evaluateAll(elements => elements.map(element => getComputedStyle(element).backgroundColor))
+
+    await page.evaluate(() => window.heynote.themeMode.set('dark'))
+    await expect(page.locator('html')).toHaveAttribute('theme', 'dark')
+    await expect.poll(async () => {
+        const dark = await swatches.evaluateAll(elements => elements.map(element => getComputedStyle(element).backgroundColor))
+        return dark.every((color, index) => color !== light[index])
+    }).toBe(true)
+    const blue = await page.getByRole('menuitemradio', { name: 'Blue', exact: true }).locator('span').evaluate(element => getComputedStyle(element).backgroundColor)
+    const red = await page.getByRole('menuitemradio', { name: 'Red', exact: true }).locator('span').evaluate(element => getComputedStyle(element).backgroundColor)
+    await expect(page.locator('.status')).toHaveCSS('background-color', blue)
+    await expect(work.locator('.buffer-color span')).toHaveCSS('background-color', blue)
+    await expect(scratch.locator('.buffer-color span')).toHaveCSS('background-color', red)
+
+    await page.keyboard.press('Escape')
+    await scratch.locator('.title').click()
+    await expect(page.locator('.status')).toHaveCSS('background-color', red)
+    expect(heynote.getErrors()).toEqual([])
+})
 
 test('opening a picker activates its note and replaces the previous picker without losing edits', async ({ page }) => {
     const heynote = new HeynotePage(page)
@@ -207,7 +244,7 @@ test('scheme syntax and UI overrides inherit by mode and reset when switching sc
     await expect(keyword).toHaveCSS('color', 'rgb(18, 52, 86)')
     await expect(string).toHaveCSS('color', 'rgb(254, 220, 186)')
     await expect(number).toHaveCSS('color', 'rgb(180, 142, 173)')
-    await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(75, 37, 37)')
+    await expect(page.locator('.block-odd')).toHaveCSS('background-color', 'rgb(54, 37, 34)')
 
     await chooseColor(page, tab, 'Blue')
     await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
@@ -227,11 +264,11 @@ test('system mode resolves the correct UI and syntax defaults when the system ap
     const keyword = page.locator('.cm-content .cm-line span').filter({ hasText: /^const$/ }).first()
     await expect(page.locator('html')).toHaveAttribute('theme', 'dark')
     await expect(keyword).toHaveCSS('color', 'rgb(94, 129, 172)')
-    await expect(page.locator('.status')).toHaveCSS('background-color', 'rgb(20, 20, 20)')
+    await expect(page.locator('.status')).toHaveCSS('background-color', 'rgb(80, 80, 80)')
 
     await page.emulateMedia({ colorScheme: 'light' })
     await expect(page.locator('html')).toHaveAttribute('theme', 'light')
     await expect(keyword).toHaveCSS('color', 'rgb(119, 0, 136)')
-    await expect(page.locator('.status')).toHaveCSS('background-color', 'rgb(140, 140, 140)')
+    await expect(page.locator('.status')).toHaveCSS('background-color', 'rgb(111, 111, 111)')
     expect(heynote.getErrors()).toEqual([])
 })

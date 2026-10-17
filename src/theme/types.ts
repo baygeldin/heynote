@@ -138,7 +138,6 @@ export interface ThemeOverrides {
 export interface ColorScheme {
     id: string
     label: string
-    swatch: string
     shared?: ThemeOverrides
     light?: ThemeOverrides
     dark?: ThemeOverrides

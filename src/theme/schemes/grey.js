@@ -4,7 +4,6 @@
 export default {
     id: "grey",
     label: "Grey",
-    swatch: "#8c8c8c",
     shared: {
         ui: {},
         syntax: {},

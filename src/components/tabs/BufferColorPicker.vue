@@ -1,22 +1,30 @@
 <script>
     import { mapStores } from 'pinia'
     import { COLOR_SCHEMES, normalizeColorScheme } from '@/src/theme/schemes/index.js'
+    import { resolveTheme } from '@/src/theme/resolve.js'
     import { useHeynoteStore } from '@/src/stores/heynote-store'
     import { useErrorStore } from '@/src/stores/error-store'
+    import { useSettingsStore } from '@/src/stores/settings-store'
 
     export default {
         props: ['path', 'title', 'color'],
 
         data() {
             return {
-                colors: COLOR_SCHEMES,
                 position: {},
                 saving: false,
             }
         },
 
         computed: {
-            ...mapStores(useHeynoteStore, useErrorStore),
+            ...mapStores(useHeynoteStore, useErrorStore, useSettingsStore),
+            colors() {
+                return COLOR_SCHEMES.map(scheme => ({
+                    id: scheme.id,
+                    label: scheme.label,
+                    swatch: resolveTheme(scheme, this.settingsStore.theme).ui.statusBackground,
+                }))
+            },
             isOpen() {
                 return this.heynoteStore.colorPickerPath === this.path
             },

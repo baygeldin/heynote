@@ -3,10 +3,23 @@ import { THEME_DEFAULTS } from "../../src/theme/defaults.js"
 import { resolveTheme, themeToCssVariables } from "../../src/theme/resolve.js"
 import { COLOR_SCHEMES, getColorScheme, normalizeColorScheme } from "../../src/theme/schemes/index.js"
 
+function luminance(hex) {
+    const channels = hex.slice(1).match(/../g).map(channel => {
+        const value = parseInt(channel, 16) / 255
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+    })
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+}
+
+function contrast(first, second) {
+    const values = [luminance(first), luminance(second)]
+    return (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05)
+}
+
 describe("color themes", () => {
     it("inherits mode defaults and overrides individual roles in each group", () => {
         const scheme = {
-            id: "custom", label: "Custom", swatch: "#123456",
+            id: "custom", label: "Custom",
             shared: { ui: { accent: "#123456" }, syntax: { keyword: "#654321" } },
             light: { ui: { blockOdd: "#eeeeee" }, syntax: { string: "#abcdef" } },
             dark: { syntax: { keyword: "#fedcba" } },
@@ -51,7 +64,7 @@ describe("color themes", () => {
     })
 
     it("exports all roles to CSS, including inherited values that reset prior overrides", () => {
-        const override = { id: "custom", label: "Custom", swatch: "#000000", dark: { syntax: { keyword: "#123456" } } }
+        const override = { id: "custom", label: "Custom", dark: { syntax: { keyword: "#123456" } } }
         const custom = themeToCssVariables(resolveTheme(override, "dark"))
         const grey = themeToCssVariables(resolveTheme(getColorScheme("grey"), "dark"))
 
@@ -59,6 +72,22 @@ describe("color themes", () => {
         expect(grey["--syntax-keyword"]).toBe(THEME_DEFAULTS.dark.syntax.keyword)
         expect(grey["--ui-block-odd"]).toBe(THEME_DEFAULTS.dark.ui.blockOdd)
         expect(Object.keys(custom).sort()).toEqual(Object.keys(grey).sort())
+    })
+
+    it.each(["light", "dark"])("keeps %s block alternation subtle and editor/footer text readable", mode => {
+        for (const scheme of COLOR_SCHEMES) {
+            const { ui } = resolveTheme(scheme, mode)
+            const context = `${scheme.id} ${mode}`
+            const alternation = contrast(ui.blockEven, ui.blockOdd)
+            // A visible but gentle stripe; these bounds are design targets, not WCAG rules.
+            expect(alternation, context).toBeGreaterThanOrEqual(1.025)
+            expect(alternation, context).toBeLessThanOrEqual(1.12)
+            for (const background of [ui.blockEven, ui.blockOdd]) {
+                expect(contrast(ui.editorText, background), context).toBeGreaterThanOrEqual(4.5)
+            }
+            expect(contrast(ui.statusText, ui.statusBackground), context).toBeGreaterThanOrEqual(4.5)
+            expect(contrast(ui.mathText, ui.mathBackground), context).toBeGreaterThanOrEqual(4.5)
+        }
     })
 
     it("offers seven schemes in picker order and falls back to grey for invalid metadata", () => {
