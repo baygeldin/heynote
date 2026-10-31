@@ -7,6 +7,14 @@ Entries are grouped by date, newest first. Dates refer to when changes were
 committed in this fork, rather than upstream release dates. Related changes are
 summarized by their resulting behavior.
 
+## 2026-10-31
+
+### Window behavior
+
+- Add a custom minimize button at the right of the macOS tab bar, available with
+  tabs shown or hidden. It minimizes the window to the Dock while keeping the
+  native traffic light buttons hidden.
+
 ## 2026-10-17
 
 ### Window behavior

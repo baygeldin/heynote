@@ -527,6 +527,13 @@ ipcMain.handle("setWindowTitle", (event, title) => {
     win?.setTitle(title)
 })
 
+ipcMain.handle('window:minimize', (event) => {
+    if (event.sender !== win?.webContents) {
+        return
+    }
+    win.minimize()
+})
+
 ipcMain.handle("showEditorContextMenu", (event, params) => {
     if (event.sender !== win?.webContents) {
         return

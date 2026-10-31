@@ -21,7 +21,7 @@
 
         data() {
             return {
-                isMac: window.heynote.platform.isMac,
+                showMinimizeButton: window.heynote.platform.isMac && !window.heynote.platform.isWebApp,
             }
         },
 
@@ -55,6 +55,7 @@
                     "tab-bar": true,
                     "blurred": !this.isFocused,
                     "show-tabs": this.showTabs,
+                    "has-minimize-button": this.showMinimizeButton,
                 }
             },
 
@@ -78,6 +79,10 @@
         },
 
         methods: {
+            minimizeWindow() {
+                window.heynote.mainProcess.invoke('window:minimize')
+            },
+
             openBufferSelector() {
                 this.heynoteStore.openBufferSelector()
             },
@@ -141,6 +146,19 @@
             />
             {{ currentBufferName }}
         </div>
+        <button
+            v-if="showMinimizeButton"
+            type="button"
+            class="minimize-window"
+            title="Minimize window (⌘M)"
+            aria-label="Minimize window"
+            @click.stop="minimizeWindow"
+            @mousedown.prevent
+        >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" focusable="false">
+                <path d="M4 8h8" />
+            </svg>
+        </button>
     </nav>
 </template>
 
@@ -156,6 +174,39 @@
             padding-right: 140px
         +platform-windows-linux-fullscreen
             padding-right: 0
+
+        &.has-minimize-button .title
+            padding: 0 40px
+
+        .minimize-window
+            app-region: no-drag
+            display: flex
+            align-items: center
+            justify-content: center
+            align-self: center
+            flex-shrink: 0
+            width: 28px
+            height: 24px
+            margin-left: auto
+            margin-right: 4px
+            padding: 0
+            border: none
+            border-radius: 3px
+            background: none
+            color: #444
+            cursor: pointer
+            +dark-mode
+                color: #aaa
+            &:hover
+                background-color: #ccc
+                +dark-mode
+                    background-color: #3a3a3a
+            &:focus-visible
+                outline: 2px solid var(--ui-accent)
+                outline-offset: -2px
+            svg
+                width: 16px
+                height: 16px
         
         &.show-tabs
             //box-shadow: var(--tab-bar-inset-shadow)

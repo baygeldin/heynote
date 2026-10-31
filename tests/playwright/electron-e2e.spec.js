@@ -395,6 +395,43 @@ test.describe('electron app', { tag: "@e2e" }, () => {
         })
     }
 
+    test('minimizes the window and restores it when summoned', async () => {
+        await page.evaluate(() => window.heynote.mainProcess.invoke('window:minimize'))
+        await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
+            return BrowserWindow.getAllWindows()[0].isMinimized()
+        })).toBe(true)
+
+        await electronApp.evaluate(({ app }) => app.emit('second-instance'))
+        await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
+            const win = BrowserWindow.getAllWindows()[0]
+            return {minimized: win.isMinimized(), visible: win.isVisible(), alwaysOnTop: win.isAlwaysOnTop()}
+        })).toEqual({minimized: false, visible: true, alwaysOnTop: true})
+        expect(heynotePage.getErrors()).toEqual([])
+    })
+
+    test('macOS minimize button works with tabs shown or hidden', async () => {
+        const button = page.getByRole('button', {name: 'Minimize window', exact: true})
+        if (process.platform !== 'darwin') {
+            await expect(button).toHaveCount(0)
+            return
+        }
+
+        for (const showTabs of [true, false]) {
+            await page.evaluate(showTabs => window.heynote.setSettings({...window.heynote.settings, showTabs}), showTabs)
+            await expect(page.locator('.tab-item')).toHaveCount(showTabs ? 1 : 0)
+            await expect(button).toBeVisible()
+            await button.click()
+            await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
+                return BrowserWindow.getAllWindows()[0].isMinimized()
+            })).toBe(true)
+            await electronApp.evaluate(({ app }) => app.emit('second-instance'))
+            await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
+                return BrowserWindow.getAllWindows()[0].isMinimized()
+            })).toBe(false)
+        }
+        expect(heynotePage.getErrors()).toEqual([])
+    })
+
     test('always floats on a single workspace and has no pin controls', async () => {
         expect(await windowState()).toMatchObject({
             alwaysOnTop: true,

@@ -12,11 +12,6 @@ develop and preview changes, then build the app on your Mac to install it locall
 
 Custom changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
-The window always floats on top and has no pin toggle. On macOS it stays on the
-Space where it was shown. Enable and customize **Settings → General → Global
-Keyboard Shortcut** to show or hide it; summoning it from another Space brings
-it there. Switching Spaces alone leaves it in place. Fullscreen is disabled,
-as it was with the upstream pin feature.
 
 ### Build and install on macOS (Apple Silicon)
 
