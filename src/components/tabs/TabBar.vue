@@ -21,7 +21,7 @@
 
         data() {
             return {
-                showMinimizeButton: window.heynote.platform.isMac && !window.heynote.platform.isWebApp,
+                showHideButton: window.heynote.platform.isMac && !window.heynote.platform.isWebApp,
             }
         },
 
@@ -55,7 +55,7 @@
                     "tab-bar": true,
                     "blurred": !this.isFocused,
                     "show-tabs": this.showTabs,
-                    "has-minimize-button": this.showMinimizeButton,
+                    "has-hide-button": this.showHideButton,
                 }
             },
 
@@ -79,8 +79,8 @@
         },
 
         methods: {
-            minimizeWindow() {
-                window.heynote.mainProcess.invoke('window:minimize')
+            hideWindow() {
+                window.heynote.mainProcess.invoke('window:hide')
             },
 
             openBufferSelector() {
@@ -147,16 +147,16 @@
             {{ currentBufferName }}
         </div>
         <button
-            v-if="showMinimizeButton"
+            v-if="showHideButton"
             type="button"
-            class="minimize-window"
-            title="Minimize window (⌘M)"
-            aria-label="Minimize window"
-            @click.stop="minimizeWindow"
+            class="hide-window"
+            title="Hide window"
+            aria-label="Hide window"
+            @click.stop="hideWindow"
             @mousedown.prevent
         >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" focusable="false">
-                <path d="M4 8h8" />
+                <path d="M4 4l8 8M12 4l-8 8" />
             </svg>
         </button>
     </nav>
@@ -175,10 +175,10 @@
         +platform-windows-linux-fullscreen
             padding-right: 0
 
-        &.has-minimize-button .title
+        &.has-hide-button .title
             padding: 0 40px
 
-        .minimize-window
+        .hide-window
             app-region: no-drag
             display: flex
             align-items: center

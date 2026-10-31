@@ -391,15 +391,14 @@ test.describe('electron app', { tag: "@e2e" }, () => {
                 fullscreen: win.isFullScreen(),
                 fullscreenable: win.isFullScreenable(),
                 visible: win.isVisible(),
+                minimized: win.isMinimized(),
             }
         })
     }
 
-    test('minimizes the window and restores it when summoned', async () => {
-        await page.evaluate(() => window.heynote.mainProcess.invoke('window:minimize'))
-        await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
-            return BrowserWindow.getAllWindows()[0].isMinimized()
-        })).toBe(true)
+    test('hides the window without minimizing and restores it when summoned', async () => {
+        await page.evaluate(() => window.heynote.mainProcess.invoke('window:hide'))
+        await expect.poll(windowState).toMatchObject({visible: false, minimized: false})
 
         await electronApp.evaluate(({ app }) => app.emit('second-instance'))
         await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
@@ -409,8 +408,8 @@ test.describe('electron app', { tag: "@e2e" }, () => {
         expect(heynotePage.getErrors()).toEqual([])
     })
 
-    test('macOS minimize button works with tabs shown or hidden', async () => {
-        const button = page.getByRole('button', {name: 'Minimize window', exact: true})
+    test('macOS hide button works with tabs shown or hidden', async () => {
+        const button = page.getByRole('button', {name: 'Hide window', exact: true})
         if (process.platform !== 'darwin') {
             await expect(button).toHaveCount(0)
             return
@@ -421,13 +420,10 @@ test.describe('electron app', { tag: "@e2e" }, () => {
             await expect(page.locator('.tab-item')).toHaveCount(showTabs ? 1 : 0)
             await expect(button).toBeVisible()
             await button.click()
-            await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
-                return BrowserWindow.getAllWindows()[0].isMinimized()
-            })).toBe(true)
+            await expect.poll(windowState).toMatchObject({visible: false, minimized: false})
+            expect(await electronApp.evaluate(({ app }) => app.isHidden())).toBe(true)
             await electronApp.evaluate(({ app }) => app.emit('second-instance'))
-            await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {
-                return BrowserWindow.getAllWindows()[0].isMinimized()
-            })).toBe(false)
+            await expect.poll(windowState).toMatchObject({visible: true, minimized: false})
         }
         expect(heynotePage.getErrors()).toEqual([])
     })
@@ -500,6 +496,12 @@ test.describe('electron app', { tag: "@e2e" }, () => {
             return globalShortcut.isRegistered('CmdOrCtrl+Shift+J')
         })).toBe(true)
         await page.locator('.settings .bottom-bar .close').click()
+
+        // The global shortcut also summons a window hidden by the custom button.
+        await page.evaluate(() => window.heynote.mainProcess.invoke('window:hide'))
+        await expect.poll(windowState).toMatchObject({visible: false, minimized: false})
+        await electronApp.evaluate(() => globalThis.__testHotkey())
+        await expect.poll(windowState).toMatchObject({visible: true, minimized: false})
 
         await electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus())
         await expect.poll(async () => electronApp.evaluate(({ BrowserWindow }) => {

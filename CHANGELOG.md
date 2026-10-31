@@ -13,9 +13,9 @@ summarized by their resulting behavior.
 
 - Allow dragging the window from the footer and line-number gutter while keeping
   footer buttons and gutter fold controls clickable.
-- Add a custom minimize button at the right of the macOS tab bar, available with
-  tabs shown or hidden. It minimizes the window to the Dock while keeping the
-  native traffic light buttons hidden.
+- Add a custom X button at the right of the macOS tab bar, available with tabs
+  shown or hidden. It hides the app using the same behavior as the global
+  visibility shortcut while keeping the native traffic light buttons hidden.
 
 ## 2026-10-17
 

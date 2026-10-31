@@ -144,6 +144,19 @@ function showWindow() {
     }
 }
 
+function hideWindow() {
+    if (!win) {
+        return
+    }
+    if (isMac) {
+        // Hide the app too so the menu bar returns to the previous application.
+        app.hide()
+    } else {
+        win.blur()
+    }
+    win.hide()
+}
+
 function wasOpenedAtLogin() {
     if (isMac) {
         return app.getLoginItemSettings().wasOpenedAtLogin
@@ -399,20 +412,7 @@ function registerGlobalHotkey() {
                     return
                 }
                 if (win.isFocused() && (!isMac || isOnActiveSpace(win))) {
-                    if (isMac) {
-                        // app.hide() only available on macOS
-                        // We want to use app.hide() so that the menu bar also gets changed
-                        app?.hide()
-                        win.hide()
-                    } else if (isLinux) {
-                        win.blur()
-                        // If we don't hide the window, it will stay on top of the stack even though it's not visible
-                        // and pressing the hotkey again won't do anything
-                        win.hide()
-                    } else {
-                        win.blur()
-                        win.hide()
-                    }
+                    hideWindow()
                 } else {
                     showWindow()
                 }
@@ -527,11 +527,11 @@ ipcMain.handle("setWindowTitle", (event, title) => {
     win?.setTitle(title)
 })
 
-ipcMain.handle('window:minimize', (event) => {
+ipcMain.handle('window:hide', (event) => {
     if (event.sender !== win?.webContents) {
         return
     }
-    win.minimize()
+    hideWindow()
 })
 
 ipcMain.handle("showEditorContextMenu", (event, params) => {
