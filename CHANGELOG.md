@@ -11,6 +11,8 @@ summarized by their resulting behavior.
 
 ### Window behavior
 
+- Allow dragging the window from the footer and line-number gutter while keeping
+  footer buttons and gutter fold controls clickable.
 - Add a custom minimize button at the right of the macOS tab bar, available with
   tabs shown or hidden. It minimizes the window to the Dock while keeping the
   native traffic light buttons hidden.

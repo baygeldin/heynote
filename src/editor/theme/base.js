@@ -64,10 +64,12 @@ export const heynoteBase = EditorView.theme({
         paddingTop: 4,
     },
     '.cm-gutters': {
+        appRegion: 'drag',
         padding: '0 2px 0 4px',
         userSelect: 'none',
     },
     '.cm-foldGutter': {
+        appRegion: 'no-drag',
         marginLeft: '0px',
     },
     '.cm-gutters .cm-gutterElement span': {

@@ -199,6 +199,7 @@
 
 <style scoped lang="sass">
     .status
+        app-region: drag
         box-sizing: border-box
         height: 22px
         width: 100%
@@ -228,6 +229,7 @@
             &:last-child
                 padding-right: 12px
             &.clickable
+                app-region: no-drag
                 cursor: pointer
                 &:hover
                     background-color: rgba(0, 0, 0, 0.1)
