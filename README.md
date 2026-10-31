@@ -10,6 +10,8 @@
 This is a personal fork of Heynote. Use the [devcontainer](#dev-container) to
 develop and preview changes, then build the app on your Mac to install it locally.
 
+Custom changes are tracked in [CHANGELOG.md](CHANGELOG.md).
+
 The window always floats on top and has no pin toggle. On macOS it stays on the
 Space where it was shown. Enable and customize **Settings → General → Global
 Keyboard Shortcut** to show or hide it; summoning it from another Space brings
@@ -62,7 +64,7 @@ In **Settings → Updates**, turn off **Periodically check for new updates** and
 
 - [Website](https://heynote.com)
 - [Documentation](https://heynote.com/docs/)
-- [Changelog](https://heynote.com/docs/changelog/)
+- [Upstream changelog](https://heynote.com/docs/changelog/)
 
 Heynote is a scratchpad and note-taking app for developers and power users. It functions as a large persistent text buffer where you can write down anything you like. Works great for that Slack message you don't want to accidentally send, a JSON response from an API you're working with, notes from a meeting, your daily to-do list, etc. 
 

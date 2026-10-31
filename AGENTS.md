@@ -2,6 +2,15 @@
 
 This repository is a personal fork of Heynote, customized for its owner.
 
+## Changelog
+
+- Update `CHANGELOG.md` alongside custom app changes and significant development
+  workflow changes.
+- Use dated `YYYY-MM-DD` sections, newest first. Group related changes and
+  describe their resulting behavior rather than listing every commit.
+- Keep entries specific to this fork. Upstream release history is in
+  `docs/changelog.md`.
+
 ## Development environment
 
 - You are working inside the project's Linux devcontainer, configured in
